@@ -88,7 +88,8 @@ class Atomic_Structure{
         void read_xyz(string file);
         void read_fhi(string file);
         void read_VASP(string file);
-        void print_xyz(string);
+        void print_xyz(string file);
+        void print_fhi(string file);
         void print_VASP(string, string, float, float (*)[3]);
         double x_min(); double x_max();
         double y_min(); double y_max();
@@ -112,6 +113,7 @@ class Cluster : public Atomic_Structure{
         void rotate_Rad(float, float);
         void rotate_Deg(float, float);
         void kick(float);
+        void kick_lennard(float);
         void swap(int);
         void srand_generator(string, int, string, int, float);
         void rand_generator(string, int, string, int);
@@ -127,11 +129,12 @@ class Cluster : public Atomic_Structure{
 class Crystal : public Atomic_Structure{
      public:
        //Parámetros de celda
-       double x[3][3];
-       double factor;
+       double lattice[3][3];
+       double factor=1;
         Crystal(string);
         Crystal();
         ~Crystal();
+        void read_fhi(string file);
 };
 
 /********************************************************************/
@@ -204,6 +207,18 @@ Atomic_Structure::~Atomic_Structure(){}
 Molecule::~Molecule(){}
 Cluster::~Cluster(){}
 Crystal::~Crystal(){}
+
+
+/**************************** random_number *************************/
+/********************* float r=random_number(0,10); *****************/
+/********************************************************************/
+
+float random_number(float min,float max)
+{
+   float random = min + ((float)rand())/((float)RAND_MAX ) * (max-min);
+   return random;
+}
+
 
 /********************************************************************/
 /************************ minimum_separation ************************/
@@ -551,6 +566,71 @@ void Atomic_Structure::read_fhi(string file)
    }
 }
 
+
+/***************************** read_fhi *****************************/
+/********************* Molecule  molecule_name; *********************/
+/**************** molecule_name.read_fhi("file.in"); ****************/
+/********************************************************************/
+
+void Crystal::read_fhi(string file)
+{
+
+   string com="cp ";
+          com+=file;
+          com+=" tmp.in";
+   system(com.c_str());
+   system("grep \"lattice_vector\" tmp.in | awk '{print $2\" \"$3\" \"$4}' >>vectors ");
+   ifstream f("vectors");
+   for(i=0;i<3;i++) //Lee los elementos de matriz
+   {
+      f>>lattice[i][0]>> lattice[i][1]>>lattice[i][2];
+   }
+   f.close();
+   system("rm vectors");
+   system("grep \"atom\" tmp.in | wc -l > tmp.xyz");
+   system("echo \" \" >> tmp.xyz");
+   system("grep \"atom\" geometry.in | awk '{print $5\" \"$2\" \"$3\" \"$4}' >> tmp.xyz");
+   system("rm tmp.in");
+   float x,y,z;
+   string Symbol;
+
+   string command="head -1 ";
+          command+="tmp.xyz";
+          command+=" >> Nat";
+   system(command.c_str());
+
+   ifstream Nat_file("Nat");
+            Nat_file >> Nat;
+            Nat_file.close();
+
+   system("rm Nat");
+          command.clear();
+          command="head -";
+          command+=to_string(Nat+2);
+          command+=" ";
+          command+="tmp.xyz";
+          command+=" | tail -";
+          command+=to_string(Nat);
+          command+=" >> coordinatesAux ";
+   system(command.c_str());
+   ifstream coordinates_file("coordinatesAux");
+   atom=new Atom[Nat+1];
+   i=0;
+   while(!coordinates_file.eof())
+   {
+      coordinates_file>>Symbol>>x>>y>>z;
+      atom[i].read_Atom(Symbol,x,y,z);
+      i++;
+   }
+   coordinates_file.close();
+   system("rm coordinatesAux");
+   map<string, double> Radios;
+   Radios=radii_dictionary();
+   for(i=0;i<Nat;i++)
+   {
+      atom[i].R=assign_radii(Radios,atom[i].Symbol);
+   }
+}
 
 /*************************** rand_generator *************************/
 /********************** Cluster  Cluster_name; **********************/
@@ -1088,6 +1168,69 @@ void Cluster::kick(float step_width)
       atom[i].x[2]=DelZ+atom[i].x[2];
    }
 
+}
+
+
+/************************  Kick_Lennard *****************************/
+/************ cluster_name.kick_lennard(step_width) *****************/
+/******************* Cysteine.kick_lennard(0.8) *********************/
+/********************************************************************/
+
+void Cluster::kick_lennard(float kick_size=1.5)
+{
+
+   int time_criterio=0;
+   float time=0;
+   float time_step=0.0001;
+   float G_=-1.0;
+   //float kick_size=1.50;  //1.5 funciona bien para 40
+   float ax,ay,az;
+   for(i=0;i<Nat;i++)
+   {
+      atom[i].x[0]=atom[i].x[0]*kick_size+random_number(-1,1)*kick_size/2;
+      atom[i].x[1]=atom[i].x[1]*kick_size+random_number(-1,1)*kick_size/2;
+      atom[i].x[2]=atom[i].x[2]*kick_size+random_number(-1,1)*kick_size/2;
+   }
+   float Dist;
+   float sep;
+   double swap;
+   while(time_criterio==0)
+   {
+      for(i=0;i<Nat;i++) //CALCULA LAS FUERZAS
+      {
+         ax=0;ay=0;az=0;
+         for(j=0;j<Nat;j++)
+         {
+            if(i!=j)
+            {
+               //Calcula
+               Dist=Atomic_Distance(atom[i],atom[j]);
+               ax=ax+G_*(4*((12*pow((atom[i].R+atom[j].R)*0.95,12)/pow(Dist,13))-(6*pow((atom[i].R+atom[j].R)*0.95,6)/pow(Dist,7)))*(atom[i].x[0]-atom[j].x[0]));
+               ay=ay+G_*(4*((12*pow((atom[i].R+atom[j].R)*0.95,12)/pow(Dist,13))-(6*pow((atom[i].R+atom[j].R)*0.95,6)/pow(Dist,7)))*(atom[i].x[1]-atom[j].x[1]));
+               az=az+G_*(4*((12*pow((atom[i].R+atom[j].R)*0.95,12)/pow(Dist,13))-(6*pow((atom[i].R+atom[j].R)*0.95,6)/pow(Dist,7)))*(atom[i].x[2]-atom[j].x[2]));
+            }
+         }
+         atom[i].a[0]=ax*G_;
+         atom[i].a[1]=ay*G_;
+         atom[i].a[2]=az*G_;
+      }
+      for(i=0;i<Nat;i++)
+      {
+         //// Velocidades
+         atom[i].v[0]=atom[i].v[0]+(time_step*atom[i].a[0]);//time;
+         atom[i].v[1]=atom[i].v[1]+(time_step*atom[i].a[1]);//time;
+         atom[i].v[2]=atom[i].v[2]+(time_step*atom[i].a[2]);//time;
+         //// Posiciones
+         atom[i].x[0]=atom[i].x[0]+(time_step*atom[i].v[0]);
+         atom[i].x[1]=atom[i].x[1]+(time_step*atom[i].v[1]);
+         atom[i].x[2]=atom[i].x[2]+(time_step*atom[i].v[2]);
+      }
+      time++;
+      if(time>12500)
+      {
+         time_criterio=1;
+      }
+   }
 }
 
 /******************************* swap *******************************/
@@ -1629,46 +1772,14 @@ system("cat output");
    xyz_to_VASP("output", outputfile, Titulo, Factor, M);
    system("rm output");
 }
-
-
-/**************************** random_number *************************/
-/********************* float r=random_number(0,10); *****************/
-/********************************************************************/
-
-float random_number(float min,float max)
-{
-   float random = min + ((float)rand())/((float)RAND_MAX ) * (max-min);
-   return random;
-}
-
-
 int main()
 {
-float Matrix[3][3]={{25,0,0},{0,25,0},{0,0,25}};
-cout<<"Variables definidas: Matriz"<<endl;
+Crystal rutilo;
+rutilo.read_fhi("geometry.in");
+rutilo.print_xyz("ejemplo.xyz");
+cout<<rutilo.lattice[0][0]<<" "<<rutilo.lattice[0][1]<<" "<<rutilo.lattice[0][2]<<" "<<endl;
+cout<<rutilo.lattice[1][0]<<" "<<rutilo.lattice[1][1]<<" "<<rutilo.lattice[1][2]<<" "<<endl;
+cout<<rutilo.lattice[2][0]<<" "<<rutilo.lattice[2][1]<<" "<<rutilo.lattice[2][2]<<" "<<endl;
 
-Atomic_Structure Conf;
-cout<<"Variables definidas conf"<<endl;
-
-Molecule Cysteine;
-cout<<"Variables definidas molecule"<<endl;
-
-Cluster Au20;
-cout<<"Variables definidas"<<endl;
-Au20.rand_generator("U",20);
-cout<<"cluster generado"<<endl;
-Cysteine.read_VASP("POSCAR");
-
-cout<<"moleculaomovida"<<endl;
-Cysteine.rotate_Rad(3.14,0.0);
-Au20.rotate_Deg(90,45);
-Conf=Cysteine+Au20;
-cout<<"configuracion creada"<<endl;
-
-
-cout<<"==========="<<endl;
-Cysteine.print_VASP("Cyst.vasp","TITULO",1.0,Matrix);
-Au20.print_VASP("Clus.vasp","TITULO",1.0,Matrix);
-Conf.print_VASP("CONTCARPru","TITULO",1.0,Matrix);
 return 0;
 }
