@@ -90,7 +90,7 @@ class Atomic_Structure{
         void read_VASP(string file);
         void print_xyz(string file);
         void print_fhi(string file);
-        void print_VASP(string, string, float, float (*)[3]);
+        void print_VASP(string, string, float, double (*)[3]);
         double x_min(); double x_max();
         double y_min(); double y_max();
         double z_min(); double z_max();
@@ -135,6 +135,9 @@ class Crystal : public Atomic_Structure{
         Crystal();
         ~Crystal();
         void read_fhi(string file);
+        void read_VASP(string file);
+        void print_fhi(string file);
+        void print_VASP(string, string, float);
 };
 
 /********************************************************************/
@@ -1570,7 +1573,7 @@ void VASP_to_xyz(string inputfile, string outputfile)
 /** xyz_to_vasp(InFile,OutFile,Title,ScaleFactor,Matrix(3x3Array) ***/
 /******float M[3][3]; xyz_to_vasp(mol.xyz,POSCAR,"Title",1,M);*******/
 
-void xyz_to_VASP(string inputfile,string outputfile,string Titulo, float Factor, float M[3][3])  //Checa la matriz
+void xyz_to_VASP(string inputfile,string outputfile,string Titulo, float Factor, double M[3][3])  //Checa la matriz
 {
    int i,j;
    int Selective;
@@ -1758,7 +1761,7 @@ void Cluster::centroid()
 /**************** molecule_name.print_VASP(argv[1]); ****************/
 /********************************************************************/
 
-void Atomic_Structure::print_VASP(string outputfile,string Titulo, float Factor, float M[3][3])
+void Atomic_Structure::print_VASP(string outputfile,string Titulo, float Factor, double M[3][3])
 {
    ofstream output_file("output");
    output_file<<Nat<<endl;
@@ -1768,18 +1771,106 @@ void Atomic_Structure::print_VASP(string outputfile,string Titulo, float Factor,
       output_file<<atom[i].Symbol<<" "<<atom[i].x[0]<<" "<<atom[i].x[1]<<" "<<atom[i].x[2]<<endl;
    }
    output_file.close();
-system("cat output");
    xyz_to_VASP("output", outputfile, Titulo, Factor, M);
    system("rm output");
+}
+
+
+/**************************** print_VASP ****************************/
+/********************* Molecule  molecule_name; *********************/
+/**************** molecule_name.print_VASP(argv[1]); ****************/
+/********************************************************************/
+
+void Crystal::print_VASP(string outputfile,string Titulo, float Factor)
+{
+   ofstream output_file("output");
+   output_file<<Nat<<endl;
+   output_file<<" "<<endl;
+   for(i=0;i<Nat;i++)
+   {
+      output_file<<atom[i].Symbol<<" "<<atom[i].x[0]<<" "<<atom[i].x[1]<<" "<<atom[i].x[2]<<endl;
+   }
+   output_file.close();
+   xyz_to_VASP("output", outputfile, Titulo, Factor, lattice);
+   system("rm output");
+}
+
+/***************************** print_fhi ****************************/
+/********************* Molecule  molecule_name; *********************/
+/**************** molecule_name.print_VASP(argv[1]); ****************/
+/********************************************************************/
+
+void Atomic_Structure::print_fhi(string outputfile)
+{
+   ofstream output_file(outputfile);
+   for(i=0;i<Nat;i++)
+   {
+      output_file<<"atom "<<atom[i].x[0]<<" "<<atom[i].x[1]<<" "<<atom[i].x[2]<<atom[i].Symbol<<endl;
+   }
+   output_file.close();
+}
+
+
+/***************************** print_fhi ****************************/
+/********************* Molecule  molecule_name; *********************/
+/**************** molecule_name.print_VASP(argv[1]); ****************/
+/********************************************************************/
+
+void Crystal::print_fhi(string outputfile)
+{
+   ofstream output_file(outputfile);
+
+   for(i=0;i<3;i++)
+   {
+      output_file<<"lattice_vector "<<lattice[i][0]<<" "<<lattice[i][1]<<" "<<lattice[i][2]<<endl;
+   }
+   for(i=0;i<Nat;i++)
+   {
+      output_file<<"atom "<<atom[i].x[0]<<" "<<atom[i].x[1]<<" "<<atom[i].x[2]<<" "<<atom[i].Symbol<<endl;
+   }
+   output_file.close();
+}
+
+
+/**************************** read_VASP *****************************/
+/********************* Molecule  molecule_name; *********************/
+/**************** molecule_name.read_VASP(argv[1]); *****************/
+/********************************************************************/
+
+void Crystal::read_VASP(string inputfile)
+{
+   Atomic_Structure aux;
+   aux.read_VASP(inputfile);
+   for(i=0;i<Nat;i++)
+   {
+      //iguala todos loso parametros
+      atom[i].x[0]=aux.atom[i].x[0];
+      atom[i].x[1]=aux.atom[i].x[1];
+      atom[i].x[2]=aux.atom[i].x[2];
+      atom[i].Symbol=aux.atom[i].Symbol;
+   }
+   string command="head -5 ";
+          command+=inputfile;
+          command+=" | tail -3 >> matriz ";
+   system(command.c_str());
+   system("rm matriz");
+   ifstream fm("matriz");
+   for(i=0;i<3;i++) //Lee los elementos de matriz
+   {
+      fm>>lattice[i][0]>> lattice[i][1]>>lattice[i][2];
+   }
+   fm.close();
 }
 int main()
 {
 Crystal rutilo;
-rutilo.read_fhi("geometry.in");
-rutilo.print_xyz("ejemplo.xyz");
+//rutilo.read_fhi("geometry.in");
+rutilo.read_VASP("POSCAR");
+rutilo.print_fhi("ejemplo.xyz"); /*
 cout<<rutilo.lattice[0][0]<<" "<<rutilo.lattice[0][1]<<" "<<rutilo.lattice[0][2]<<" "<<endl;
 cout<<rutilo.lattice[1][0]<<" "<<rutilo.lattice[1][1]<<" "<<rutilo.lattice[1][2]<<" "<<endl;
 cout<<rutilo.lattice[2][0]<<" "<<rutilo.lattice[2][1]<<" "<<rutilo.lattice[2][2]<<" "<<endl;
-
+*/
+rutilo.print_VASP("ejemplo.vasp","Este es un ejemplo",1.0);
 return 0;
 }
