@@ -331,12 +331,10 @@ Atomic_Structure::Atomic_Structure(string file)
 
    ifstream coordinates_file("coordinatesAux");
    atom=new Atom[Nat+1];
-   i=0;
-   while(!coordinates_file.eof())
+   for(i=0;i<Nat;i++)
    {
       coordinates_file>>Symbol>>x>>y>>z;
       atom[i].read_Atom(Symbol,x,y,z);
-      i++;
    }
    coordinates_file.close();
    system("rm coordinatesAux");
@@ -472,6 +470,7 @@ bool Atomic_Structure::fit_in(float xmin, float xmax, float ymin, float ymax, fl
 
 void Atomic_Structure::read_xyz(string file)
 {
+
    float x,y,z;
    string Symbol;
    string command="head -1 ";
@@ -496,13 +495,13 @@ void Atomic_Structure::read_xyz(string file)
 
    ifstream coordinates_file("coordinatesAux");
    atom=new Atom[Nat+1];
-   i=0;
-   while(!coordinates_file.eof())
+
+   for(i=0;i<Nat;i++)
    {
       coordinates_file>>Symbol>>x>>y>>z;
       atom[i].read_Atom(Symbol,x,y,z);
-      i++;
    }
+
    coordinates_file.close();
    system("rm coordinatesAux");
    map<string, double> Radios;
@@ -526,7 +525,7 @@ void Atomic_Structure::read_fhi(string file)
    system(com.c_str());
    system("grep \"atom\" tmp.in | wc -l > tmp.xyz");
    system("echo \" \" >> tmp.xyz");
-   system("grep \"atom\" geometry.in | awk '{print $5\" \"$2\" \"$3\" \"$4}' >> tmp.xyz");
+   system("grep \"atom\" tmp.in | awk '{print $5\" \"$2\" \"$3\" \"$4}' >> tmp.xyz");
    system("rm tmp.in");
    float x,y,z;
    string Symbol;
@@ -550,14 +549,13 @@ void Atomic_Structure::read_fhi(string file)
           command+=to_string(Nat);
           command+=" >> coordinatesAux ";
    system(command.c_str());
+   system("rm tmp.xyz");
    ifstream coordinates_file("coordinatesAux");
    atom=new Atom[Nat+1];
-   i=0;
-   while(!coordinates_file.eof())
+   for(i=0;i<Nat;i++)
    {
       coordinates_file>>Symbol>>x>>y>>z;
       atom[i].read_Atom(Symbol,x,y,z);
-      i++;
    }
    coordinates_file.close();
    system("rm coordinatesAux");
@@ -577,7 +575,6 @@ void Atomic_Structure::read_fhi(string file)
 
 void Crystal::read_fhi(string file)
 {
-
    string com="cp ";
           com+=file;
           com+=" tmp.in";
@@ -592,7 +589,8 @@ void Crystal::read_fhi(string file)
    system("rm vectors");
    system("grep \"atom\" tmp.in | wc -l > tmp.xyz");
    system("echo \" \" >> tmp.xyz");
-   system("grep \"atom\" geometry.in | awk '{print $5\" \"$2\" \"$3\" \"$4}' >> tmp.xyz");
+   system("grep \"atom\" tmp.in | awk '{print $5\" \"$2\" \"$3\" \"$4}' >> tmp.xyz");
+
    system("rm tmp.in");
    float x,y,z;
    string Symbol;
@@ -616,14 +614,13 @@ void Crystal::read_fhi(string file)
           command+=to_string(Nat);
           command+=" >> coordinatesAux ";
    system(command.c_str());
+   system("rm tmp.xyz");
    ifstream coordinates_file("coordinatesAux");
    atom=new Atom[Nat+1];
-   i=0;
-   while(!coordinates_file.eof())
+   for(i=0;i<Nat;i++)
    {
       coordinates_file>>Symbol>>x>>y>>z;
       atom[i].read_Atom(Symbol,x,y,z);
-      i++;
    }
    coordinates_file.close();
    system("rm coordinatesAux");
@@ -1315,6 +1312,39 @@ Atomic_Structure operator +(Atomic_Structure Mol1, Atomic_Structure Mol2)
 }
 
 
+/******************************   +   *******************************/
+/**************** molecule3 = molecule1 + molecule2 *****************/
+/********************************************************************/
+
+Cluster operator +(Cluster Mol1, Cluster Mol2)
+{
+   int j;
+   Cluster Joined;
+   Joined.Nat=Mol1.Nat+Mol2.Nat;
+
+   Joined.atom=new Atom[Joined.Nat+1];
+
+   for(i=0;i<Mol1.Nat;i++)
+   {
+      Joined.atom[i].Symbol=Mol1.atom[i].Symbol;
+      for(j=0;j<3;j++)
+      {
+         Joined.atom[i].x[j]=Mol1.atom[i].x[j];
+      }
+   }
+
+   for(i=0;i<Mol2.Nat;i++)
+   {
+   Joined.atom[i+Mol1.Nat].Symbol=Mol2.atom[i].Symbol;
+      for(j=0;j<3;j++)
+      {
+         Joined.atom[i+Mol1.Nat].x[j]=Mol2.atom[i].x[j];
+      }
+   }
+   return Joined;
+}
+
+
 
 
 /********************* Function VASP_to_xyz  ************************/
@@ -1673,7 +1703,6 @@ void Atomic_Structure::read_VASP(string file)
       ifstream Nat_file("Nat");
                Nat_file >> Nat;
                Nat_file.close();
-               cout<<Nat<<endl;
 
       system("rm Nat");
              command.clear();
@@ -1805,7 +1834,7 @@ void Atomic_Structure::print_fhi(string outputfile)
    ofstream output_file(outputfile);
    for(i=0;i<Nat;i++)
    {
-      output_file<<"atom "<<atom[i].x[0]<<" "<<atom[i].x[1]<<" "<<atom[i].x[2]<<atom[i].Symbol<<endl;
+      output_file<<"atom "<<atom[i].x[0]<<" "<<atom[i].x[1]<<" "<<atom[i].x[2]<<" "<<atom[i].Symbol<<endl;
    }
    output_file.close();
 }
@@ -1837,40 +1866,99 @@ void Crystal::print_fhi(string outputfile)
 /**************** molecule_name.read_VASP(argv[1]); *****************/
 /********************************************************************/
 
-void Crystal::read_VASP(string inputfile)
+void Crystal::read_VASP(string file)
 {
-   Atomic_Structure aux;
-   aux.read_VASP(inputfile);
+   VASP_to_xyz(file, "salida");
+   float x,y,z;
+   string Symbol;
+   string command;
+   system("head -1 salida >> Nat");
+   ifstream Nat_file("Nat");
+   Nat_file >> Nat;
+   Nat_file.close();
+
+   system("rm Nat");
+          command.clear();
+          command="head -";
+          command+=to_string(Nat+2);
+          command+=" salida | tail -";
+          command+=to_string(Nat);
+          command+=" >> coordinatesAux";
+   system(command.c_str());
+   ifstream coordinates_file("coordinatesAux");
+   atom=new Atom[Nat+1];
+   i=0;
+   while(!coordinates_file.eof())
+   {
+      coordinates_file>>Symbol>>x>>y>>z;
+      atom[i].read_Atom(Symbol,x,y,z);
+      i++;
+   }
+   coordinates_file.close();
+   system("rm coordinatesAux ");
+
+   system("rm salida");
+   map<string, double> Radios;
+   Radios=radii_dictionary();
    for(i=0;i<Nat;i++)
    {
-      //iguala todos loso parametros
-      atom[i].x[0]=aux.atom[i].x[0];
-      atom[i].x[1]=aux.atom[i].x[1];
-      atom[i].x[2]=aux.atom[i].x[2];
-      atom[i].Symbol=aux.atom[i].Symbol;
+      atom[i].R=assign_radii(Radios,atom[i].Symbol);
    }
-   string command="head -5 ";
-          command+=inputfile;
+
+          command="head -5 ";
+          command+=file;
           command+=" | tail -3 >> matriz ";
    system(command.c_str());
-   system("rm matriz");
    ifstream fm("matriz");
    for(i=0;i<3;i++) //Lee los elementos de matriz
    {
       fm>>lattice[i][0]>> lattice[i][1]>>lattice[i][2];
    }
    fm.close();
+   system("rm matriz");
+
+}
+
+Cluster extract(string estruct, string symbol)
+{
+   Cluster aux;
+   string command="grep \"";
+          command+=symbol;
+          command+="\" ";
+          command+=estruct;
+          command+=" >> clus.fhi";
+   system(command.c_str());
+
+   aux.read_fhi("clus.fhi");
+   aux.print_fhi("impr.xyz");
+   system("rm impr.xyz");
+   system("rm clus.fhi");
+   return aux;
 }
 int main()
 {
+
 Crystal rutilo;
-//rutilo.read_fhi("geometry.in");
-rutilo.read_VASP("POSCAR");
-rutilo.print_fhi("ejemplo.xyz"); /*
+Cluster au;
+Cluster todo;
+Cluster c3;
+Crystal x1;
+c3.read_xyz("C3.xyz");
+x1.read_fhi("ejemplo.fhi");
+x1.print_xyz("ej.xyz");
+rutilo.read_VASP("geometry.in");
+
+rutilo.print_fhi("ejemplo.fhi");
+au=extract("ejemplo.fhi","C");
+au.print_fhi("extracted");
+todo=c3+au;
+todo.print_fhi("lpm.in");
+/*
 cout<<rutilo.lattice[0][0]<<" "<<rutilo.lattice[0][1]<<" "<<rutilo.lattice[0][2]<<" "<<endl;
 cout<<rutilo.lattice[1][0]<<" "<<rutilo.lattice[1][1]<<" "<<rutilo.lattice[1][2]<<" "<<endl;
 cout<<rutilo.lattice[2][0]<<" "<<rutilo.lattice[2][1]<<" "<<rutilo.lattice[2][2]<<" "<<endl;
 */
-rutilo.print_VASP("ejemplo.vasp","Este es un ejemplo",1.0);
+
+//rutilo.print_VASP("ejemplo.vasp","Este es un ejemplo",1.0);
 return 0;
 }
