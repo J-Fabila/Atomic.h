@@ -307,11 +307,16 @@ double assign_radii(map<string, double> _Radios, string _Symbol)
 
 Atomic_Structure::Atomic_Structure(string file)
 {
+
    float x,y,z;
    string Symbol;
-   string command="head -1 ";
+   string command="awk '{print $1\" \"$2\" \"$3\" \"$4}' ";
           command+=file;
-          command+=" >> Nat";
+          command+=" > coords.aux";
+   system(command.c_str());
+   system("cat coords.aux");
+          command.clear();
+          command="head -1 coords.aux >> Nat";
    system(command.c_str());
 
    ifstream Nat_file("Nat");
@@ -473,9 +478,13 @@ void Atomic_Structure::read_xyz(string file)
 
    float x,y,z;
    string Symbol;
-   string command="head -1 ";
+   string command="awk '{print $1\" \"$2\" \"$3\" \"$4}' ";
           command+=file;
-          command+=" >> Nat";
+          command+=" > coords.aux";
+   system(command.c_str());
+   system("cat coords.aux");
+          command.clear();
+          command="head -1 coords.aux >> Nat";
    system(command.c_str());
 
    ifstream Nat_file("Nat");
@@ -486,12 +495,11 @@ void Atomic_Structure::read_xyz(string file)
           command.clear();
           command="head -";
           command+=to_string(Nat+2);
-          command+=" ";
-          command+=file;
-          command+=" | tail -";
+          command+=" coords.aux | tail -";
           command+=to_string(Nat);
-          command+=" >> coordinatesAux ";
+          command+=" > coordinatesAux ";
    system(command.c_str());
+   system("rm coords.aux");
 
    ifstream coordinates_file("coordinatesAux");
    atom=new Atom[Nat+1];
@@ -527,44 +535,8 @@ void Atomic_Structure::read_fhi(string file)
    system("echo \" \" >> tmp.xyz");
    system("grep \"atom\" tmp.in | awk '{print $5\" \"$2\" \"$3\" \"$4}' >> tmp.xyz");
    system("rm tmp.in");
-   float x,y,z;
-   string Symbol;
-
-   string command="head -1 ";
-          command+="tmp.xyz";
-          command+=" >> Nat";
-   system(command.c_str());
-
-   ifstream Nat_file("Nat");
-            Nat_file >> Nat;
-            Nat_file.close();
-
-   system("rm Nat");
-          command.clear();
-          command="head -";
-          command+=to_string(Nat+2);
-          command+=" ";
-          command+="tmp.xyz";
-          command+=" | tail -";
-          command+=to_string(Nat);
-          command+=" >> coordinatesAux ";
-   system(command.c_str());
+   read_xyz("tmp.xyz");
    system("rm tmp.xyz");
-   ifstream coordinates_file("coordinatesAux");
-   atom=new Atom[Nat+1];
-   for(i=0;i<Nat;i++)
-   {
-      coordinates_file>>Symbol>>x>>y>>z;
-      atom[i].read_Atom(Symbol,x,y,z);
-   }
-   coordinates_file.close();
-   system("rm coordinatesAux");
-   map<string, double> Radios;
-   Radios=radii_dictionary();
-   for(i=0;i<Nat;i++)
-   {
-      atom[i].R=assign_radii(Radios,atom[i].Symbol);
-   }
 }
 
 
@@ -590,46 +562,9 @@ void Crystal::read_fhi(string file)
    system("grep \"atom\" tmp.in | wc -l > tmp.xyz");
    system("echo \" \" >> tmp.xyz");
    system("grep \"atom\" tmp.in | awk '{print $5\" \"$2\" \"$3\" \"$4}' >> tmp.xyz");
-
    system("rm tmp.in");
-   float x,y,z;
-   string Symbol;
-
-   string command="head -1 ";
-          command+="tmp.xyz";
-          command+=" >> Nat";
-   system(command.c_str());
-
-   ifstream Nat_file("Nat");
-            Nat_file >> Nat;
-            Nat_file.close();
-
-   system("rm Nat");
-          command.clear();
-          command="head -";
-          command+=to_string(Nat+2);
-          command+=" ";
-          command+="tmp.xyz";
-          command+=" | tail -";
-          command+=to_string(Nat);
-          command+=" >> coordinatesAux ";
-   system(command.c_str());
+   read_xyz("tmp.xyz");
    system("rm tmp.xyz");
-   ifstream coordinates_file("coordinatesAux");
-   atom=new Atom[Nat+1];
-   for(i=0;i<Nat;i++)
-   {
-      coordinates_file>>Symbol>>x>>y>>z;
-      atom[i].read_Atom(Symbol,x,y,z);
-   }
-   coordinates_file.close();
-   system("rm coordinatesAux");
-   map<string, double> Radios;
-   Radios=radii_dictionary();
-   for(i=0;i<Nat;i++)
-   {
-      atom[i].R=assign_radii(Radios,atom[i].Symbol);
-   }
 }
 
 /*************************** rand_generator *************************/
@@ -1696,41 +1631,8 @@ void xyz_to_VASP(string inputfile,string outputfile,string Titulo, float Factor,
 void Atomic_Structure::read_VASP(string file)
 {
    VASP_to_xyz(file, "salida");
-      float x,y,z;
-      string Symbol;
-      string command;
-      system("head -1 salida >> Nat");
-      ifstream Nat_file("Nat");
-               Nat_file >> Nat;
-               Nat_file.close();
-
-      system("rm Nat");
-             command.clear();
-             command="head -";
-             command+=to_string(Nat+2);
-             command+=" salida | tail -";
-             command+=to_string(Nat);
-             command+=" >> coordinatesAux";
-      system(command.c_str());
-      ifstream coordinates_file("coordinatesAux");
-      atom=new Atom[Nat+1];
-      i=0;
-      while(!coordinates_file.eof())
-      {
-         coordinates_file>>Symbol>>x>>y>>z;
-         atom[i].read_Atom(Symbol,x,y,z);
-         i++;
-      }
-      coordinates_file.close();
-      system("rm coordinatesAux ");
-
+   read_xyz("salida");
    system("rm salida");
-   map<string, double> Radios;
-   Radios=radii_dictionary();
-   for(i=0;i<Nat;i++)
-   {
-      atom[i].R=assign_radii(Radios,atom[i].Symbol);
-   }
 }
 
 
@@ -1869,45 +1771,11 @@ void Crystal::print_fhi(string outputfile)
 void Crystal::read_VASP(string file)
 {
    VASP_to_xyz(file, "salida");
-   float x,y,z;
-   string Symbol;
-   string command;
-   system("head -1 salida >> Nat");
-   ifstream Nat_file("Nat");
-   Nat_file >> Nat;
-   Nat_file.close();
-
-   system("rm Nat");
-          command.clear();
-          command="head -";
-          command+=to_string(Nat+2);
-          command+=" salida | tail -";
-          command+=to_string(Nat);
-          command+=" >> coordinatesAux";
-   system(command.c_str());
-   ifstream coordinates_file("coordinatesAux");
-   atom=new Atom[Nat+1];
-   i=0;
-   while(!coordinates_file.eof())
-   {
-      coordinates_file>>Symbol>>x>>y>>z;
-      atom[i].read_Atom(Symbol,x,y,z);
-      i++;
-   }
-   coordinates_file.close();
-   system("rm coordinatesAux ");
-
+   read_xyz("salida");
    system("rm salida");
-   map<string, double> Radios;
-   Radios=radii_dictionary();
-   for(i=0;i<Nat;i++)
-   {
-      atom[i].R=assign_radii(Radios,atom[i].Symbol);
-   }
-
-          command="head -5 ";
+   string command="head -5 ";
           command+=file;
-          command+=" | tail -3 >> matriz ";
+          command+=" | tail -3 > matriz ";
    system(command.c_str());
    ifstream fm("matriz");
    for(i=0;i<3;i++) //Lee los elementos de matriz
@@ -1943,16 +1811,17 @@ Cluster au;
 Cluster todo;
 Cluster c3;
 Crystal x1;
-c3.read_xyz("C3.xyz");
-x1.read_fhi("ejemplo.fhi");
-x1.print_xyz("ej.xyz");
-rutilo.read_VASP("geometry.in");
+//c3.read_xyz("C3.xyz");
+rutilo.read_VASP("POSCAR");
+//x1.print_xyz("ej.xyz");
+//utilo.read_VASP("geometry.in");
 
-rutilo.print_fhi("ejemplo.fhi");
-au=extract("ejemplo.fhi","C");
-au.print_fhi("extracted");
-todo=c3+au;
-todo.print_fhi("lpm.in");
+//rutilo.print_fhi("ejemplo.fhi");
+//au=extract("ejemplo.fhi","C");
+//au.print_fhi("extracted");
+//todo=c3+au;
+//todo.print_fhi("lpm.in");
+rutilo.print_xyz("copiac3.xyz");
 /*
 cout<<rutilo.lattice[0][0]<<" "<<rutilo.lattice[0][1]<<" "<<rutilo.lattice[0][2]<<" "<<endl;
 cout<<rutilo.lattice[1][0]<<" "<<rutilo.lattice[1][1]<<" "<<rutilo.lattice[1][2]<<" "<<endl;
