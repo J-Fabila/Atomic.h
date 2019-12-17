@@ -482,7 +482,6 @@ void Atomic_Structure::read_xyz(string file)
           command+=file;
           command+=" > coords.aux";
    system(command.c_str());
-   system("cat coords.aux");
           command.clear();
           command="head -1 coords.aux >> Nat";
    system(command.c_str());
