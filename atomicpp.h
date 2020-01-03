@@ -91,6 +91,7 @@ class Atomic_Structure{
         void print_xyz(string file);
         void print_fhi(string file);
         void print_VASP(string, string, float, double (*)[3]);
+        void move(double, double, double);
         double x_min(); double x_max();
         double y_min(); double y_max();
         double z_min(); double z_max();
@@ -109,7 +110,6 @@ class Cluster : public Atomic_Structure{
         Cluster(string);
         Cluster();
         ~Cluster();
-        void move(float, float, float);
         void rotate_Rad(float, float);
         void rotate_Deg(float, float);
         void kick(float);
@@ -149,7 +149,6 @@ class Molecule : public Atomic_Structure{
        Molecule(string);
        Molecule();
        ~Molecule();
-      void move(float, float, float);
       void rotate_Rad(float, float);
       void rotate_Deg(float, float);
       void centroid();
@@ -268,6 +267,7 @@ map<string, double> radii_dictionary()
      map<string, double> Radii;
 
      Radii.insert( radio_atomico("Au", 1.44) );
+     Radii.insert( radio_atomico("Ti", 1.44) );
      Radii.insert( radio_atomico("Ag", 1.66) );
      Radii.insert( radio_atomico("Ir", 1.35) );
      Radii.insert( radio_atomico("Cu",1.28 ) );
@@ -358,10 +358,10 @@ Atomic_Structure::Atomic_Structure(string file)
 
 double Atomic_Structure::z_max()
 {
-   double current, maximum=atom[0].x[2];
+   double current, maximum=atom[0].x[2]+atom[0].R;
    for (i=1;i<Nat;i++)
    {
-      current=atom[i].x[2];
+      current=atom[i].x[2]+atom[i].R;
       if( current > maximum )
       {
          maximum=current;
@@ -373,10 +373,10 @@ double Atomic_Structure::z_max()
 
 double Atomic_Structure::y_max()
 {
-   double current, maximum=atom[0].x[1];
+   double current, maximum=atom[0].x[1]+atom[0].R;
    for (i=1;i<Nat;i++)
    {
-      current=atom[i].x[1];
+      current=atom[i].x[1]+atom[i].R;
       if( current > maximum )
       {
          maximum=current;
@@ -388,10 +388,10 @@ double Atomic_Structure::y_max()
 
 double Atomic_Structure::x_max()
 {
-   double current, maximum=atom[0].x[0];
+   double current, maximum=atom[0].x[0]+atom[0].R;
    for (i=1;i<Nat;i++)
    {
-      current=atom[i].x[0];
+      current=atom[i].x[0]+atom[i].R;
       if( current > maximum )
       {
          maximum=current;
@@ -401,10 +401,10 @@ double Atomic_Structure::x_max()
 }
 double Atomic_Structure::z_min()
 {
-   double current, minimum=atom[0].x[2];
+   double current, minimum=atom[0].x[2]-atom[0].R;
    for (i=1;i<Nat;i++)
    {
-      current=atom[i].x[2];
+      current=atom[i].x[2]-atom[i].R;
       if( current < minimum )
       {
          minimum=current;
@@ -415,10 +415,10 @@ double Atomic_Structure::z_min()
 
 double Atomic_Structure::y_min()
 {
-   double current, minimum=atom[0].x[1];
+   double current, minimum=atom[0].x[1]-atom[0].R;
    for (i=1;i<Nat;i++)
    {
-      current=atom[i].x[1];
+      current=atom[i].x[1]-atom[i].R;
       if( current < minimum )
       {
          minimum=current;
@@ -429,10 +429,10 @@ double Atomic_Structure::y_min()
 
 double Atomic_Structure::x_min()
 {
-   double current, minimum=atom[0].x[0];
+   double current, minimum=atom[0].x[0]-atom[0].R;
    for (i=1;i<Nat;i++)
    {
-      current=atom[i].x[0];
+      current=atom[i].x[0]-atom[i].R;
       if( current < minimum )
       {
          minimum=current;
@@ -899,7 +899,7 @@ void Atomic_Structure::print_xyz(string outputfile)
 /********************** Cysteine.move(1,5,3) ************************/
 /********************************************************************/
 
-void Molecule::move(float Dx, float Dy, float Dz)
+void Atomic_Structure::move(double Dx, double Dy, double Dz)
 {
    for(i=0;i<Nat;i++)
    {
@@ -909,20 +909,6 @@ void Molecule::move(float Dx, float Dy, float Dz)
    }
 }
 
-/*****************************  move ********************************/
-/************** molecule_name.move(DeltaX,DeltaY,DeltaZ) ************/
-/********************** Cysteine.move(1,5,3) ************************/
-/********************************************************************/
-
-void Cluster::move(float Dx, float Dy, float Dz)
-{
-   for(i=0;i<Nat;i++)
-   {
-       atom[i].x[0]=atom[i].x[0]+Dx;
-       atom[i].x[1]=atom[i].x[1]+Dy;
-       atom[i].x[2]=atom[i].x[2]+Dz;
-   }
-}
 
 /*************************** rotate_Rad *****************************/
 /********** molecule_name.rotate_Rad(theta(rad), phi(rad)) **********/
@@ -1110,20 +1096,21 @@ void Cluster::kick(float step_width)
 /******************* Cysteine.kick_lennard(0.8) *********************/
 /********************************************************************/
 
-void Cluster::kick_lennard(float kick_size=1.5)
+void Cluster::kick_lennard(float kick_size=1.0)
 {
 
    int time_criterio=0;
    float time=0;
    float time_step=0.0001;
    float G_=-1.0;
+   float kick_s=1.5;
    //float kick_size=1.50;  //1.5 funciona bien para 40
    float ax,ay,az;
    for(i=0;i<Nat;i++)
    {
-      atom[i].x[0]=atom[i].x[0]*kick_size+random_number(-1,1)*kick_size/2;
-      atom[i].x[1]=atom[i].x[1]*kick_size+random_number(-1,1)*kick_size/2;
-      atom[i].x[2]=atom[i].x[2]*kick_size+random_number(-1,1)*kick_size/2;
+      atom[i].x[0]=atom[i].x[0]*kick_s+random_number(-1,1)*kick_s/2;
+      atom[i].x[1]=atom[i].x[1]*kick_s+random_number(-1,1)*kick_s/2;
+      atom[i].x[2]=atom[i].x[2]*kick_s+random_number(-1,1)*kick_s/2;
    }
    float Dist;
    float sep;
@@ -1160,7 +1147,7 @@ void Cluster::kick_lennard(float kick_size=1.5)
          atom[i].x[2]=atom[i].x[2]+(time_step*atom[i].v[2]);
       }
       time++;
-      if(time>12500)
+      if(time>12500*kick_size)
       {
          time_criterio=1;
       }
@@ -1801,32 +1788,4 @@ Cluster extract(string estruct, string symbol)
    system("rm impr.xyz");
    system("rm clus.fhi");
    return aux;
-}
-int main()
-{
-
-Crystal rutilo;
-Cluster au;
-Cluster todo;
-Cluster c3;
-Crystal x1;
-//c3.read_xyz("C3.xyz");
-rutilo.read_VASP("POSCAR");
-//x1.print_xyz("ej.xyz");
-//utilo.read_VASP("geometry.in");
-
-//rutilo.print_fhi("ejemplo.fhi");
-//au=extract("ejemplo.fhi","C");
-//au.print_fhi("extracted");
-//todo=c3+au;
-//todo.print_fhi("lpm.in");
-rutilo.print_xyz("copiac3.xyz");
-/*
-cout<<rutilo.lattice[0][0]<<" "<<rutilo.lattice[0][1]<<" "<<rutilo.lattice[0][2]<<" "<<endl;
-cout<<rutilo.lattice[1][0]<<" "<<rutilo.lattice[1][1]<<" "<<rutilo.lattice[1][2]<<" "<<endl;
-cout<<rutilo.lattice[2][0]<<" "<<rutilo.lattice[2][1]<<" "<<rutilo.lattice[2][2]<<" "<<endl;
-*/
-
-//rutilo.print_VASP("ejemplo.vasp","Este es un ejemplo",1.0);
-return 0;
 }
