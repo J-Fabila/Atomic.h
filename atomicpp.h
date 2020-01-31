@@ -96,6 +96,8 @@ class Atomic_Structure{
         double y_min(); double y_max();
         double z_min(); double z_max();
         bool fit_in(float, float, float, float, float, float);
+        void show(string visualizer);
+
 };
 
 /********************************************************************/
@@ -1789,3 +1791,84 @@ Cluster extract(string estruct, string symbol)
    system("rm clus.fhi");
    return aux;
 }
+
+
+/******************************* show *******************************/
+/**************** molecule_name.show(visualizer=iqmol); ****************/
+/********************************************************************/
+
+void Atomic_Structure::show(string visualizer="iqmol")
+{
+   print_xyz("visualizer_tmp.xyz");
+   if(visualizer=="iqmol")
+   {
+      system("iqmol visualizer_tmp.xyz 2> /dev/null > /dev/null");
+   }
+   else
+   {
+      if(visualizer=="avogadro")
+      {
+         system("avogadro visualizer_tmp.xyz 2> /dev/null > /dev/null");
+      }
+      else
+      {
+         if(visualizer=="vesta")
+         {
+            system("VESTA visualizer_tmp.xyz 2> /dev/null > /dev/null");
+         }
+      }
+   }
+   system("rm visualizer_tmp.xyz");
+}
+
+
+/***************************** make_movie ***************************/
+/****************** make_movie(estruct,archivo.xyz); ****************/
+/********************************************************************/
+
+void make_movie(Atomic_Structure estructura, string file)
+{
+    estructura[0].print_xyz("file_movie");
+    for(i=1;i<estructura.Nat;i++)
+    {
+       estructura[i].print_xyz("movie_tmp.xyz");
+       system("cat movie_tmp.xyz >> file_movie")
+    }
+    string command="mv file_movie ";
+           command+=file;
+    system(command.c_str());
+}
+
+/*************************** show_movie  ****************************/
+/************* show_movie(visualizer=iqmol, movie.xyz); *************/
+/********************************************************************/
+
+void show_movie(string visualizer="iqmol", string file)
+{
+   string command="cp ";
+         command+=file;
+         command+="  visualizer_tmp.xyz";
+   system(command.c_str());
+
+   if(visualizer=="iqmol")
+   {
+      system("iqmol visualizer_tmp.xyz 2> /dev/null > /dev/null");
+   }
+   else
+   {
+      if(visualizer=="avogadro")
+      {
+         system("avogadro visualizer_tmp.xyz 2> /dev/null > /dev/null");
+      }
+      else
+      {
+         if(visualizer=="vesta")
+         {
+            system("VESTA visualizer_tmp.xyz 2> /dev/null > /dev/null");
+         }
+      }
+   }
+   system("rm visualizer_tmp.xyz");
+}
+
+
