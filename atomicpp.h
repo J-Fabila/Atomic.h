@@ -1945,7 +1945,7 @@ int int_pipe(string cmd,int defecto=0)
    }
 }
 
-int float_pipe(string cmd,float defecto=0.0)
+float float_pipe(string cmd,float defecto=0.0)
 {
    string data;
    FILE * stream;
@@ -1969,6 +1969,30 @@ int float_pipe(string cmd,float defecto=0.0)
    }
 }
 
+
+double double_pipe(string cmd,float defecto=0.0)
+{
+   string data;
+   FILE * stream;
+   const int max_buffer = 256;
+   char buffer[max_buffer];
+   cmd.append(" 2>&1");
+   stream = popen(cmd.c_str(), "r");
+   if (stream)
+   {
+      while (!feof(stream))
+      if (fgets(buffer, max_buffer, stream) != NULL) data.append(buffer);
+      pclose(stream);
+   }
+   if(data.length()>1)
+   {
+      return stod(data);
+   }
+   else
+   {
+      return defecto;
+   }
+}
 
 
 
