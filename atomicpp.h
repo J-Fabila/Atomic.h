@@ -1825,7 +1825,7 @@ void Atomic_Structure::show(string visualizer="iqmol")
 /***************************** make_movie ***************************/
 /****************** make_movie(estruct,archivo.xyz); ****************/
 /********************************************************************/
-
+/*
 void make_movie(Atomic_Structure estructura, string file)
 {
     estructura[0].print_xyz("file_movie");
@@ -1838,11 +1838,11 @@ void make_movie(Atomic_Structure estructura, string file)
            command+=file;
     system(command.c_str());
 }
-
+*/
 /*************************** show_movie  ****************************/
 /************* show_movie(visualizer=iqmol, movie.xyz); *************/
 /********************************************************************/
-
+/*
 void show_movie(string visualizer="iqmol", string file)
 {
    string command="cp ";
@@ -1870,7 +1870,7 @@ void show_movie(string visualizer="iqmol", string file)
    }
    system("rm visualizer_tmp.xyz");
 }
-
+*/
 string read_pipe(string command) {
    char buffer[128];
    string result = "";
@@ -1895,6 +1895,80 @@ string read_bash(string command)
    bar.close();
    return variable;
 }
+
+string string_pipe(string cmd,string defecto)
+{
+//https://www.jeremymorgan.com/tutorials/c-programming/how-to-capture-the-output-of-a-linux-command-in-c/
+   string data;
+   FILE * stream;
+   const int max_buffer = 256;
+   char buffer[max_buffer];
+   cmd.append(" 2>&1");
+   stream = popen(cmd.c_str(), "r");
+   if (stream)
+   {
+      while (!feof(stream))
+      if (fgets(buffer, max_buffer, stream) != NULL) data.append(buffer);
+      pclose(stream);
+   }
+   if(data.length()>1)
+   {
+      return data;
+   }
+   else
+   {
+      return defecto;
+   }
+
+}
+int int_pipe(string cmd,int defecto)
+{
+   string data;
+   FILE * stream;
+   const int max_buffer = 256;
+   char buffer[max_buffer];
+   cmd.append(" 2>&1");
+   stream = popen(cmd.c_str(), "r");
+   if (stream)
+   {
+      while (!feof(stream))
+      if (fgets(buffer, max_buffer, stream) != NULL) data.append(buffer);
+      pclose(stream);
+   }
+   if(data.length()>1)
+   {
+      return stoi(data);
+   }
+   else
+   {
+      return defecto;
+   }
+}
+
+int float_pipe(string cmd,float defecto)
+{
+   string data;
+   FILE * stream;
+   const int max_buffer = 256;
+   char buffer[max_buffer];
+   cmd.append(" 2>&1");
+   stream = popen(cmd.c_str(), "r");
+   if (stream)
+   {
+      while (!feof(stream))
+      if (fgets(buffer, max_buffer, stream) != NULL) data.append(buffer);
+      pclose(stream);
+   }
+   if(data.length()>1)
+   {
+      return stof(data);
+   }
+   else
+   {
+      return defecto;
+   }
+}
+
 
 
 
