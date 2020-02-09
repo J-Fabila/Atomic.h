@@ -1896,7 +1896,7 @@ string read_bash(string command)
    return variable;
 }
 
-string string_pipe(string cmd,string defecto)
+string string_pipe(string cmd,string defecto="AAA")
 {
 //https://www.jeremymorgan.com/tutorials/c-programming/how-to-capture-the-output-of-a-linux-command-in-c/
    string data;
@@ -1921,7 +1921,7 @@ string string_pipe(string cmd,string defecto)
    }
 
 }
-int int_pipe(string cmd,int defecto)
+int int_pipe(string cmd,int defecto=0)
 {
    string data;
    FILE * stream;
@@ -1945,7 +1945,7 @@ int int_pipe(string cmd,int defecto)
    }
 }
 
-int float_pipe(string cmd,float defecto)
+int float_pipe(string cmd,float defecto=0.0)
 {
    string data;
    FILE * stream;
