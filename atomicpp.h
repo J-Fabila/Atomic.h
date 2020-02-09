@@ -1871,4 +1871,30 @@ void show_movie(string visualizer="iqmol", string file)
    system("rm visualizer_tmp.xyz");
 }
 
+string read_pipe(string command) {
+   char buffer[128];
+   string result = "";
+
+   FILE* pipe = popen(command.c_str(), "r");
+   while (!feof(pipe)) {
+      if (fgets(buffer, 128, pipe) != NULL)
+         result += buffer;
+   }
+
+   pclose(pipe);
+   return result;
+}
+
+string read_bash(string command)
+{
+   string variable;
+   command+=" > vArIaBlE_to_rEaD";
+   system(command.c_str());
+   ifstream bar("vArIaBlE_to_rEaD");
+   bar>>variable;
+   bar.close();
+   return variable;
+}
+
+
 
