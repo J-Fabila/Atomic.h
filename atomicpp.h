@@ -1911,9 +1911,10 @@ string string_pipe(string cmd,string defecto="AAA")
       if (fgets(buffer, max_buffer, stream) != NULL) data.append(buffer);
       pclose(stream);
    }
+   data.pop_back();
    if(data.length()>1)
    {
-      return data.pop_back();
+      return data;
    }
    else
    {
