@@ -1913,7 +1913,7 @@ string string_pipe(string cmd,string defecto="AAA")
    }
    if(data.length()>1)
    {
-      return data;
+      return data.pop_back();
    }
    else
    {
