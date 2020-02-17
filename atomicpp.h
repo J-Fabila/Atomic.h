@@ -88,7 +88,7 @@ class Atomic_Structure{
         void read_xyz(string file);
         void read_fhi(string file);
         void read_VASP(string file);
-        void print_xyz(string file);
+        void print_xyz(string file, string tag);
         void print_fhi(string file);
         void print_VASP(string, string, float, double (*)[3]);
         void move(double, double, double);
@@ -884,11 +884,11 @@ void Cluster::srand_generator(string Symbol_1, int N_Symbol_1, string Symbol_2="
 /**************** molecule_name.print_xyz(argv[1]); *****************/
 /********************************************************************/
 
-void Atomic_Structure::print_xyz(string outputfile)
+void Atomic_Structure::print_xyz(string outputfile, string tag=" ")
 {
    ofstream output_file(outputfile);
    output_file<<Nat<<endl;
-   output_file<<" "<<endl;
+   output_file<<tag<<endl;
    for(i=0;i<Nat;i++)
    {
       output_file<<atom[i].Symbol<<" "<<atom[i].x[0]<<" "<<atom[i].x[1]<<" "<<atom[i].x[2]<<endl;
