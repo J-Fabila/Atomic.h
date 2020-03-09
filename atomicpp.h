@@ -1995,5 +1995,144 @@ double double_pipe(string cmd,float defecto=0.0)
    }
 }
 
+/*
+
+void Cluster::srand_generator_alternativo(string Symbol_1, int N_Symbol_1, string Symbol_2="AAA", int N_Symbol_2=0, float epsilon=1.0)
+{
+
+  map<string, double> Radios;
+   Radios=radii_dictionary();
+   Nat=N_Symbol_1+N_Symbol_2;
+   int random;
+   int randomS;
+   double criterio;
+   int accepted=0;
+   int rejected=0;
+   float Mx,Nx,My,Ny,Mz,Nz;
+   float x,y,z;
+   double Distance;
+   srand(time(NULL));
+   atom=new Atom[Nat+1];
+   int cont_S1=1;
+   int cont_S2=0;
+
+   if(strcmp(Symbol_2.c_str(),"AAA") != 0 )
+   {
+      type="bimetallic";
+   }
+   else
+   {
+      type="monometallic";
+   }
+///////////////////////////////Coloca el primer
+///////////////////////////////átomo en el origen
+   atom[0].Symbol=Symbol_1;  //o podría ser que
+   atom[0].x[0]=0;           //se genere en un
+   atom[0].x[1]=0;           //punto aleatorio
+   atom[0].x[2]=0;           //o que admita como
+///////////////////////////////argumento este punto
+///////////////////////////////por default el origen
 
 
+   atom[0].R=assign_radii(Radios, atom[0].Symbol);
+   for(i=1;i<Nat;i++)
+   {
+      accepted=0;
+      while(accepted==0)
+      {
+         random=(i-1)+(double)rand()/((double)RAND_MAX/(0-(i-1)+1)+1);
+
+         if(N_Symbol_2!=0)
+         {
+            randomS=rand()%2;
+
+            if(cont_S1<N_Symbol_1 && randomS==0)
+            {
+               atom[i].Symbol=Symbol_1;
+            }
+            else
+            {
+               if(cont_S2<N_Symbol_2 && randomS==1)
+               {
+                  atom[i].Symbol=Symbol_2;
+               }
+               else
+               {
+                  if(cont_S1>=N_Symbol_1)
+                  {
+                     atom[i].Symbol=Symbol_2;
+                  }
+                  else
+                  {
+                     if(cont_S2>=N_Symbol_2)
+                     {
+                        atom[i].Symbol=Symbol_1;
+                     }
+                  }
+
+               }
+            }
+         }
+         else
+         {
+            atom[i].Symbol=Symbol_1;
+         }
+
+         atom[i].R=assign_radii(Radios, atom[i].Symbol);
+
+         double Mrandom =  -1.0;
+         double Nrandom =  1.0;
+
+         atom[i].x[0]= atom[random].x[0] + ((atom[i].R) * (Mrandom + (double)rand()/((double)RAND_MAX/(Nrandom-Mrandom+1)+1) ));
+         atom[i].x[1]= atom[random].x[1] + ((atom[i].R) * (Mrandom + (double)rand()/((double)RAND_MAX/(Nrandom-Mrandom+1)+1) ));
+         atom[i].x[2]= atom[random].x[2] + ((atom[i].R) * (Mrandom + (double)rand()/((double)RAND_MAX/(Nrandom-Mrandom+1)+1) ));
+
+         rejected=0;
+
+         for(j=0;j<i;j++)
+         {
+            Distance=sqrt(pow(atom[i].x[0]-atom[j].x[0],2)+pow(atom[i].x[1]-atom[j].x[1],2)+pow(atom[i].x[2]-atom[j].x[2],2));
+            criterio=atom[i].R+atom[j].R;
+
+            double criterio2 = (2.2 * (1.5928235)*(pow(Nat,1.0/3.0))); // CHECK "as a function of size" e.g ---> (Nat / 2.0)
+            if(Distance<criterio || Distance>criterio2)
+            {
+             cout<<"Criteria not reached"<<endl;
+               rejected++;
+            }
+         }
+
+         if(rejected>0)
+         {
+            accepted=0;
+         }
+         else
+         {
+            accepted=1;
+            if(strcmp(atom[i].Symbol.c_str(),Symbol_1.c_str()) == 0 )
+            {
+               cont_S1++;
+            }
+            else
+            {
+               cont_S2++;
+            }
+
+         }
+         if(i<Nat)
+         {
+            continue;
+         }
+         else
+         {
+            break;
+         }
+
+      }
+
+   }
+
+}
+
+
+*/
