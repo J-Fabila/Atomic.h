@@ -46,7 +46,7 @@ class Atom
      double M;
      int Z;
      // A lo mejor tambien le podrías poner los
-     // parámetros para dinámica de L-J     
+     // parámetros para dinámica de L-J
      Atom();
      void read_Atom(string, float, float, float);
 };
@@ -2388,6 +2388,45 @@ double double_pipe(string cmd,float defecto=0.0)
    }
 }
 
+
+
+/********************************************************************/
+/************************** coulomb_matrix **************************/
+/**************** Molecule  molecule_1, molecule_2; *****************/
+/*************** c_matrix=coulomb_matrix(molecule_1); ***************/
+/********************************************************************/
+
+void coulomb_matrix(Atomic_Structure Molecule1, string energy, string file)
+{
+   double  coulomb[Molecule1.Nat][Molecule1.Nat];
+   // Calculates Coulomb Matrix
+   for(i=0;i<Molecule1.Nat;i++)
+   {
+      for(j=0;j<Molecule1.Nat;j++)
+      {
+         if(i==j)
+         {
+            coulomb[i][j]=0.5*pow(Molecule1.atom[i].Z,2.4);
+         }
+         else
+         {
+           coulomb[i][j]=(Molecule1.atom[i].Z)*(Molecule1.atom[j].Z)/Atomic_Distance(Molecule1.atom[i],Molecule1.atom[j]);
+         }
+      }
+   }
+   // Flat Coulomb Matrix into a single vector
+   ofstream dat(file,std::ios_base::app);
+   for(i=0;i<Molecule1.Nat;i++)
+   {
+      for(j=i;j<Molecule1.Nat;j++)
+      {
+           dat<<coulomb[i][j]<<",";
+      }
+   }
+   dat<<energy<<endl;
+   dat.close();
+
+}
 /*
 
 void Cluster::srand_generator_alternativo(string Symbol_1, int N_Symbol_1, string Symbol_2="AAA", int N_Symbol_2=0, float epsilon=1.0)
