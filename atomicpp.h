@@ -43,13 +43,17 @@ class Atom
      double v[3];
      double a[3];
      double R;
+     double M;
+     int Z;
+     // A lo mejor tambien le podrías poner los
+     // parámetros para dinámica de L-J     
      Atom();
      void read_Atom(string, float, float, float);
 };
 
 Atom::Atom()
 {
-   Symbol="AAA"; R=0;
+   Symbol="AAA"; R=0; Z=0; M=0;
    x[0]=0.0; x[1]=0.0; x[2]=0.0;
    v[0]=0.0; v[1]=0.0; v[2]=0.0;
    a[0]=0.0; a[1]=0.0; a[2]=0.0;
@@ -267,21 +271,105 @@ map<string, double> radii_dictionary()
   typedef pair<string, double> radio_atomico;
 
      map<string, double> Radii;
-
-     Radii.insert( radio_atomico("Au", 1.44) );
-     Radii.insert( radio_atomico("Ti", 1.44) );
-     Radii.insert( radio_atomico("Ag", 1.66) );
-     Radii.insert( radio_atomico("Ir", 1.35) );
-     Radii.insert( radio_atomico("Cu",1.28 ) );
-     Radii.insert( radio_atomico("Rh",1.34 ) );
-     Radii.insert( radio_atomico("Pt",1.39 ) );
-     Radii.insert( radio_atomico("Ce",1.82 ) );
-     Radii.insert( radio_atomico("H" ,0.46 ) );
-     Radii.insert( radio_atomico("O" ,0.74 ) );
-     Radii.insert( radio_atomico("N" ,0.74 ) );
-     Radii.insert( radio_atomico("S" ,1.04 ) );
-     Radii.insert( radio_atomico("C" ,0.77 ) );
-     Radii.insert( radio_atomico("P" ,1.10 ) );
+     Radii.insert( radio_atomico("H"  , 0.46 ) );
+     Radii.insert( radio_atomico("He" , 1.22 ) );
+     Radii.insert( radio_atomico("Li" , 1.57 ) );
+     Radii.insert( radio_atomico("Be" , 1.12 ) );
+     Radii.insert( radio_atomico("B"  , 0.81 ) );
+     Radii.insert( radio_atomico("C"  , 0.77 ) );
+     Radii.insert( radio_atomico("N"  , 0.74 ) );
+     Radii.insert( radio_atomico("O"  , 0.74 ) );
+     Radii.insert( radio_atomico("F"  , 0.72 ) );
+     Radii.insert( radio_atomico("Ne" , 1.6  ) );
+     Radii.insert( radio_atomico("Na" , 1.91 ) );
+     Radii.insert( radio_atomico("Mg" , 1.6  ) );
+     Radii.insert( radio_atomico("Al" , 1.43 ) );
+     Radii.insert( radio_atomico("Si" , 1.18 ) );
+     Radii.insert( radio_atomico("P"  , 1.10 ) );
+     Radii.insert( radio_atomico("S"  , 1.04 ) );
+     Radii.insert( radio_atomico("Cl" , 0.99 ) );
+     Radii.insert( radio_atomico("Ar" , 1.92 ) );
+     Radii.insert( radio_atomico("K"  , 2.35 ) );
+     Radii.insert( radio_atomico("Ca" , 1.97 ) );
+     Radii.insert( radio_atomico("Sc" , 1.64 ) );
+     Radii.insert( radio_atomico("Ti" , 1.44 ) );
+     Radii.insert( radio_atomico("Va" , 0.8  ) );
+     Radii.insert( radio_atomico("Cr" , 1.29 ) );
+     Radii.insert( radio_atomico("Mn" , 1.37 ) );
+     Radii.insert( radio_atomico("Fe" , 1.26 ) );
+     Radii.insert( radio_atomico("Co" , 1.25 ) );
+     Radii.insert( radio_atomico("Ni" , 1.25 ) );
+     Radii.insert( radio_atomico("Cu" , 1.28 ) );
+     Radii.insert( radio_atomico("Zn" , 1.37 ) );
+     Radii.insert( radio_atomico("Ga" , 1.53 ) );
+     Radii.insert( radio_atomico("Ge" , 1.22 ) );
+     Radii.insert( radio_atomico("As" , 1.21 ) );
+     Radii.insert( radio_atomico("Se" , 1.04 ) );
+     Radii.insert( radio_atomico("Br" , 1.14 ) );
+     Radii.insert( radio_atomico("Kr" , 1.98 ) );
+     Radii.insert( radio_atomico("Rb" , 2.5  ) );
+     Radii.insert( radio_atomico("Sr" , 2.15 ) );
+     Radii.insert( radio_atomico("Y"  , 1.82 ) );
+     Radii.insert( radio_atomico("Zr" , 1.6  ) );
+     Radii.insert( radio_atomico("Nb" , 1.47 ) );
+     Radii.insert( radio_atomico("Mo" , 1.4  ) );
+     Radii.insert( radio_atomico("Tc" , 1.35 ) );
+     Radii.insert( radio_atomico("Ru" , 1.34 ) );
+     Radii.insert( radio_atomico("Rh" , 1.34 ) );
+     Radii.insert( radio_atomico("Pd" , 1.37 ) );
+     Radii.insert( radio_atomico("Ag" , 1.66 ) );
+     Radii.insert( radio_atomico("Cd" , 1.52 ) );
+     Radii.insert( radio_atomico("In" , 1.67 ) );
+     Radii.insert( radio_atomico("Sn" , 1.58 ) );
+     Radii.insert( radio_atomico("Sb" , 1.41 ) );
+     Radii.insert( radio_atomico("Te" , 1.37 ) );
+     Radii.insert( radio_atomico("I"  , 1.33 ) );
+     Radii.insert( radio_atomico("Xe" , 2.18 ) );
+     Radii.insert( radio_atomico("Cs" , 2.72 ) );
+     Radii.insert( radio_atomico("Ba" , 2.24 ) );
+     Radii.insert( radio_atomico("La" , 1.88 ) );
+     Radii.insert( radio_atomico("Ce" , 1.82 ) );
+     Radii.insert( radio_atomico("Pr" , 1.82 ) );
+     Radii.insert( radio_atomico("Nd" , 1.82 ) );
+     Radii.insert( radio_atomico("Pm" , 1.81 ) );
+     Radii.insert( radio_atomico("Sm" , 1.81 ) );
+     Radii.insert( radio_atomico("Eu" , 2.06 ) );
+     Radii.insert( radio_atomico("Gd" , 1.79 ) );
+     Radii.insert( radio_atomico("Tb" , 1.77 ) );
+     Radii.insert( radio_atomico("Dy" , 1.77 ) );
+     Radii.insert( radio_atomico("Ho" , 1.76 ) );
+     Radii.insert( radio_atomico("Er" , 1.75 ) );
+     Radii.insert( radio_atomico("Tm" , 1.00 ) );
+     Radii.insert( radio_atomico("Yb" , 1.94 ) );
+     Radii.insert( radio_atomico("Lu" , 1.72 ) );
+     Radii.insert( radio_atomico("Hf" , 1.59 ) );
+     Radii.insert( radio_atomico("Ta" , 1.47 ) );
+     Radii.insert( radio_atomico("W" ,  1.41 ) );
+     Radii.insert( radio_atomico("Re" , 1.37 ) );
+     Radii.insert( radio_atomico("Os" , 1.35 ) );
+     Radii.insert( radio_atomico("Ir" , 1.35 ) );
+     Radii.insert( radio_atomico("Pt" , 1.39 ) );
+     Radii.insert( radio_atomico("Au" , 1.44 ) );
+     Radii.insert( radio_atomico("Hg" , 1.55 ) );
+     Radii.insert( radio_atomico("Tl" , 1.71 ) );
+     Radii.insert( radio_atomico("Pb" , 1.75 ) );
+     Radii.insert( radio_atomico("Bi" , 1.82 ) );
+     Radii.insert( radio_atomico("Po" , 1.77 ) );
+     Radii.insert( radio_atomico("At" , 1.62 ) );
+     Radii.insert( radio_atomico("Rn" , 1.8  ) );
+     Radii.insert( radio_atomico("Fr" , 1.00 ) );
+     Radii.insert( radio_atomico("Ra" , 2.35 ) );
+     Radii.insert( radio_atomico("Ac" , 2.03 ) );
+     Radii.insert( radio_atomico("To" , 1.8  ) );
+     Radii.insert( radio_atomico("Pa" , 1.63 ) );
+     Radii.insert( radio_atomico("U" ,  1.56 ) );
+     Radii.insert( radio_atomico("Np" , 1.56 ) );
+     Radii.insert( radio_atomico("Pl" , 1.5  ) );
+     Radii.insert( radio_atomico("Am" , 1.73 ) );
+     Radii.insert( radio_atomico("Cm" , 1.8  ) );
+     Radii.insert( radio_atomico("Bk" , 1.8  ) );
+     Radii.insert( radio_atomico("Cf" , 1.8  ) );
+     Radii.insert( radio_atomico("Es" , 1.8  ) );
 
     return Radii;
 }
@@ -300,6 +388,267 @@ double assign_radii(map<string, double> _Radios, string _Symbol)
      _radii= p->second;
      return _radii;
 }
+
+/********************************************************************/
+/************************** Masas Constructor ***********************/
+/******************** map<string, double> Masas; ********************/
+/********************* Masas=masses_dictionary(); ********************/
+/********************************************************************/
+
+map<string, double> masses_dictionary()
+{
+  typedef pair<string, double> masa_atomica;
+     // Lower Standard Atomic Weight: NIST
+     // https://physics.nist.gov/cgi-bin/Compositions/stand_alone.pl?ele=&ascii=html&isotype=some
+     map<string, double> Masas;
+     Masas.insert( masa_atomica("H"  , 1.00784     ) );
+     Masas.insert( masa_atomica("He" , 4.002602    ) );
+     Masas.insert( masa_atomica("Li" , 6.938       ) );
+     Masas.insert( masa_atomica("Be" , 9.0121831   ) );
+     Masas.insert( masa_atomica("B"  , 10.806      ) );
+     Masas.insert( masa_atomica("C"  , 12.0096     ) );
+     Masas.insert( masa_atomica("N"  , 14.00643    ) );
+     Masas.insert( masa_atomica("O"  , 15.99903    ) );
+     Masas.insert( masa_atomica("F"  , 18.9984031  ) );
+     Masas.insert( masa_atomica("Ne" , 20.1797     ) );
+     Masas.insert( masa_atomica("Na" , 22.989769   ) );
+     Masas.insert( masa_atomica("Mg" , 24.304      ) );
+     Masas.insert( masa_atomica("Al" , 26.981538   ) );
+     Masas.insert( masa_atomica("Si" , 28.084      ) );
+     Masas.insert( masa_atomica("P"  , 30.973761998) );
+     Masas.insert( masa_atomica("S"  , 32.059      ) );
+     Masas.insert( masa_atomica("Cl" , 35.446      ) );
+     Masas.insert( masa_atomica("Ar" , 39.0983     ) );
+     Masas.insert( masa_atomica("K"  , 39.0983     ) );
+     Masas.insert( masa_atomica("Ca" , 40.0788     ) );
+     Masas.insert( masa_atomica("Sc" , 44.95590    ) );
+     Masas.insert( masa_atomica("Ti" , 47.867      ) );
+     Masas.insert( masa_atomica("Va" , 50.9415     ) );
+     Masas.insert( masa_atomica("Cr" , 51.9961     ) );
+     Masas.insert( masa_atomica("Mn" , 54.938044   ) );
+     Masas.insert( masa_atomica("Fe" , 55.845      ) );
+     Masas.insert( masa_atomica("Co" , 58.933194   ) );
+     Masas.insert( masa_atomica("Ni" , 58.6934     ) );
+     Masas.insert( masa_atomica("Cu" , 63.546      ) );
+     Masas.insert( masa_atomica("Zn" , 65.38       ) );
+     Masas.insert( masa_atomica("Ga" , 69.723      ) );
+     Masas.insert( masa_atomica("Ge" , 72.630      ) );
+     Masas.insert( masa_atomica("As" , 74.921595   ) );
+     Masas.insert( masa_atomica("Se" , 78.971      ) );
+     Masas.insert( masa_atomica("Br" , 79.901      ) );
+     Masas.insert( masa_atomica("Kr" , 83.798      ) );
+     Masas.insert( masa_atomica("Rb" , 85.467      ) );
+     Masas.insert( masa_atomica("Sr" , 87.62       ) );
+     Masas.insert( masa_atomica("Y"  , 88.90584    ) );
+     Masas.insert( masa_atomica("Zr" , 88.90584    ) );
+     Masas.insert( masa_atomica("Nb" , 92.90637    ) );
+     Masas.insert( masa_atomica("Mo" , 95.95       ) );
+     Masas.insert( masa_atomica("Tc" , 98          ) );
+     Masas.insert( masa_atomica("Ru" , 101.07      ) );
+     Masas.insert( masa_atomica("Rh" , 102.90550   ) );
+     Masas.insert( masa_atomica("Pd" , 106.42      ) );
+     Masas.insert( masa_atomica("Ag" , 107.8682    ) );
+     Masas.insert( masa_atomica("Cd" , 112.414     ) );
+     Masas.insert( masa_atomica("In" , 114.818     ) );
+     Masas.insert( masa_atomica("Sn" , 118.710     ) );
+     Masas.insert( masa_atomica("Sb" , 121.760     ) );
+     Masas.insert( masa_atomica("Te" , 127.60      ) );
+     Masas.insert( masa_atomica("I"  , 126.90447   ) );
+     Masas.insert( masa_atomica("Xe" , 131.293     ) );
+     Masas.insert( masa_atomica("Cs" , 132.905451  ) );
+     Masas.insert( masa_atomica("Ba" , 137.327     ) );
+     Masas.insert( masa_atomica("La" , 138.90547   ) );
+     Masas.insert( masa_atomica("Ce" , 140.116     ) );
+     Masas.insert( masa_atomica("Pr" , 140.90766   ) );
+     Masas.insert( masa_atomica("Nd" , 144.242     ) );
+     Masas.insert( masa_atomica("Pm" , 145         ) );
+     Masas.insert( masa_atomica("Sm" , 150.36      ) );
+     Masas.insert( masa_atomica("Eu" , 151.964     ) );
+     Masas.insert( masa_atomica("Gd" , 157.25      ) );
+     Masas.insert( masa_atomica("Tb" , 158.92535   ) );
+     Masas.insert( masa_atomica("Dy" , 162.500     ) );
+     Masas.insert( masa_atomica("Ho" , 164.93033   ) );
+     Masas.insert( masa_atomica("Er" , 167.259     ) );
+     Masas.insert( masa_atomica("Tm" , 168.93422   ) );
+     Masas.insert( masa_atomica("Yb" , 173.054     ) );
+     Masas.insert( masa_atomica("Lu" , 174.9668    ) );
+     Masas.insert( masa_atomica("Hf" , 178.49      ) );
+     Masas.insert( masa_atomica("Ta" , 180.94788   ) );
+     Masas.insert( masa_atomica("W"  , 183.84      ) );
+     Masas.insert( masa_atomica("Re" , 183.84      ) );
+     Masas.insert( masa_atomica("Os" , 190.23      ) );
+     Masas.insert( masa_atomica("Ir" , 192.217     ) );
+     Masas.insert( masa_atomica("Pt" , 195.084     ) );
+     Masas.insert( masa_atomica("Au" , 196.966569  ) );
+     Masas.insert( masa_atomica("Hg" , 200.592     ) );
+     Masas.insert( masa_atomica("Tl" , 204.382     ) );
+     Masas.insert( masa_atomica("Pb" , 207.2       ) );
+     Masas.insert( masa_atomica("Bi" , 208.98040   ) );
+     Masas.insert( masa_atomica("Po" , 209         ) );
+     Masas.insert( masa_atomica("At" , 210         ) );
+     Masas.insert( masa_atomica("Rn" , 222         ) );
+     Masas.insert( masa_atomica("Fr" , 223         ) );
+     Masas.insert( masa_atomica("Ra" , 226         ) );
+     Masas.insert( masa_atomica("Ac" , 227         ) );
+     Masas.insert( masa_atomica("To" , 232.0377    ) );
+     Masas.insert( masa_atomica("Pa" , 231.03588   ) );
+     Masas.insert( masa_atomica("U"  , 238.02891   ) );
+     Masas.insert( masa_atomica("Np" , 237         ) );
+     Masas.insert( masa_atomica("Pl" , 244         ) );
+     Masas.insert( masa_atomica("Am" , 241.0568293 ) );
+     Masas.insert( masa_atomica("Cm" , 243.0613893 ) );
+     Masas.insert( masa_atomica("Bk" , 247.0703073 ) );
+     Masas.insert( masa_atomica("Cf" , 249.0748539 ) );
+     Masas.insert( masa_atomica("Es" , 252.082980  ) );
+
+    return Masas;
+}
+
+
+/********************************************************************/
+/************************ Masses Assignment *************************/
+/*********** atom[i].M=assign_mass(Masas,atom[i].Symbol); **********/
+/********************************************************************/
+
+double assign_mass(map<string, double> _Masas, string _Symbol)
+{
+     map<string, double>::iterator p = _Masas.find(_Symbol);
+     double _mass;
+     if(p != _Masas.end())
+     _mass= p->second;
+     return _mass;
+}
+
+/********************************************************************/
+/************************* Charge Constructor ***********************/
+/******************** map<string, double> Cargas; *******************/
+/******************* Radios=charges_dictionary(); *******************/
+/********************************************************************/
+
+map<string, int> charges_dictionary()
+{
+  typedef pair<string, int> carga_nucleo;
+
+     map<string, int> Cargas;
+     Cargas.insert( carga_nucleo("H"  , 1  ) );
+     Cargas.insert( carga_nucleo("He" , 2  ) );
+     Cargas.insert( carga_nucleo("Li" , 3  ) );
+     Cargas.insert( carga_nucleo("Be" , 4  ) );
+     Cargas.insert( carga_nucleo("B"  , 5  ) );
+     Cargas.insert( carga_nucleo("C"  , 6  ) );
+     Cargas.insert( carga_nucleo("N"  , 7  ) );
+     Cargas.insert( carga_nucleo("O"  , 8  ) );
+     Cargas.insert( carga_nucleo("F"  , 9  ) );
+     Cargas.insert( carga_nucleo("Ne" , 10 ) );
+     Cargas.insert( carga_nucleo("Na" , 11 ) );
+     Cargas.insert( carga_nucleo("Mg" , 12 ) );
+     Cargas.insert( carga_nucleo("Al" , 13 ) );
+     Cargas.insert( carga_nucleo("Si" , 14 ) );
+     Cargas.insert( carga_nucleo("P"  , 15 ) );
+     Cargas.insert( carga_nucleo("S"  , 16 ) );
+     Cargas.insert( carga_nucleo("Cl" , 17 ) );
+     Cargas.insert( carga_nucleo("Ar" , 18 ) );
+     Cargas.insert( carga_nucleo("K"  , 19 ) );
+     Cargas.insert( carga_nucleo("Ca" , 20 ) );
+     Cargas.insert( carga_nucleo("Sc" , 21 ) );
+     Cargas.insert( carga_nucleo("Ti" , 22 ) );
+     Cargas.insert( carga_nucleo("Va" , 23 ) );
+     Cargas.insert( carga_nucleo("Cr" , 24 ) );
+     Cargas.insert( carga_nucleo("Mn" , 25 ) );
+     Cargas.insert( carga_nucleo("Fe" , 26 ) );
+     Cargas.insert( carga_nucleo("Co" , 27 ) );
+     Cargas.insert( carga_nucleo("Ni" , 28 ) );
+     Cargas.insert( carga_nucleo("Cu" , 29 ) );
+     Cargas.insert( carga_nucleo("Zn" , 30 ) );
+     Cargas.insert( carga_nucleo("Ga" , 31 ) );
+     Cargas.insert( carga_nucleo("Ge" , 32 ) );
+     Cargas.insert( carga_nucleo("As" , 33 ) );
+     Cargas.insert( carga_nucleo("Se" , 34 ) );
+     Cargas.insert( carga_nucleo("Br" , 35 ) );
+     Cargas.insert( carga_nucleo("Kr" , 36 ) );
+     Cargas.insert( carga_nucleo("Rb" , 37 ) );
+     Cargas.insert( carga_nucleo("Sr" , 38 ) );
+     Cargas.insert( carga_nucleo("Y"  , 39 ) );
+     Cargas.insert( carga_nucleo("Zr" , 40 ) );
+     Cargas.insert( carga_nucleo("Nb" , 41 ) );
+     Cargas.insert( carga_nucleo("Mo" , 42 ) );
+     Cargas.insert( carga_nucleo("Tc" , 43 ) );
+     Cargas.insert( carga_nucleo("Ru" , 44 ) );
+     Cargas.insert( carga_nucleo("Rh" , 45 ) );
+     Cargas.insert( carga_nucleo("Pd" , 46 ) );
+     Cargas.insert( carga_nucleo("Ag" , 47 ) );
+     Cargas.insert( carga_nucleo("Cd" , 48 ) );
+     Cargas.insert( carga_nucleo("In" , 49 ) );
+     Cargas.insert( carga_nucleo("Sn" , 50 ) );
+     Cargas.insert( carga_nucleo("Sb" , 51 ) );
+     Cargas.insert( carga_nucleo("Te" , 52 ) );
+     Cargas.insert( carga_nucleo("I"  , 53 ) );
+     Cargas.insert( carga_nucleo("Xe" , 54 ) );
+     Cargas.insert( carga_nucleo("Cs" , 55 ) );
+     Cargas.insert( carga_nucleo("Ba" , 56 ) );
+     Cargas.insert( carga_nucleo("La" , 57 ) );
+     Cargas.insert( carga_nucleo("Ce" , 58 ) );
+     Cargas.insert( carga_nucleo("Pr" , 59 ) );
+     Cargas.insert( carga_nucleo("Nd" , 60 ) );
+     Cargas.insert( carga_nucleo("Pm" , 61 ) );
+     Cargas.insert( carga_nucleo("Sm" , 62 ) );
+     Cargas.insert( carga_nucleo("Eu" , 63 ) );
+     Cargas.insert( carga_nucleo("Gd" , 64 ) );
+     Cargas.insert( carga_nucleo("Tb" , 65 ) );
+     Cargas.insert( carga_nucleo("Dy" , 66 ) );
+     Cargas.insert( carga_nucleo("Ho" , 67 ) );
+     Cargas.insert( carga_nucleo("Er" , 68 ) );
+     Cargas.insert( carga_nucleo("Tm" , 69 ) );
+     Cargas.insert( carga_nucleo("Yb" , 70 ) );
+     Cargas.insert( carga_nucleo("Lu" , 71 ) );
+     Cargas.insert( carga_nucleo("Hf" , 72 ) );
+     Cargas.insert( carga_nucleo("Ta" , 73 ) );
+     Cargas.insert( carga_nucleo("W" , 74 ) );
+     Cargas.insert( carga_nucleo("Re" , 75 ) );
+     Cargas.insert( carga_nucleo("Os" , 76 ) );
+     Cargas.insert( carga_nucleo("Ir" , 77 ) );
+     Cargas.insert( carga_nucleo("Pt" , 78 ) );
+     Cargas.insert( carga_nucleo("Au" , 79 ) );
+     Cargas.insert( carga_nucleo("Hg" , 80 ) );
+     Cargas.insert( carga_nucleo("Tl" , 81 ) );
+     Cargas.insert( carga_nucleo("Pb" , 82 ) );
+     Cargas.insert( carga_nucleo("Bi" , 83 ) );
+     Cargas.insert( carga_nucleo("Po" , 84 ) );
+     Cargas.insert( carga_nucleo("At" , 85 ) );
+     Cargas.insert( carga_nucleo("Rn" , 86 ) );
+     Cargas.insert( carga_nucleo("Fr" , 87 ) );
+     Cargas.insert( carga_nucleo("Ra" , 88 ) );
+     Cargas.insert( carga_nucleo("Ac" , 89 ) );
+     Cargas.insert( carga_nucleo("To" , 90 ) );
+     Cargas.insert( carga_nucleo("Pa" , 91 ) );
+     Cargas.insert( carga_nucleo("U"  , 92 ) );
+     Cargas.insert( carga_nucleo("Np" , 93 ) );
+     Cargas.insert( carga_nucleo("Pl" , 94 ) );
+     Cargas.insert( carga_nucleo("Am" , 95 ) );
+     Cargas.insert( carga_nucleo("Cm" , 96 ) );
+     Cargas.insert( carga_nucleo("Bk" , 97 ) );
+     Cargas.insert( carga_nucleo("Cf" , 98 ) );
+     Cargas.insert( carga_nucleo("Es" , 99 ) );
+
+    return Cargas;
+}
+
+
+/********************************************************************/
+/*********************** Charges Assignment *************************/
+/********** atom[i].Z=assign_charge(Cargas,atom[i].Symbol); **********/
+/********************************************************************/
+
+double assign_charge(map<string, int> _Cargas, string _Symbol)
+{
+     map<string, int>::iterator p = _Cargas.find(_Symbol);
+     double _carga;
+     if(p != _Cargas.end())
+     _carga= p->second;
+     return _carga;
+}
+
+
 
 /********************************************************************/
 /****************** Constructor (from .xyz file) ********************/
@@ -346,10 +695,16 @@ Atomic_Structure::Atomic_Structure(string file)
    coordinates_file.close();
    system("rm coordinatesAux");
    map<string, double> Radios;
+   map<string, double> Masas;
+   map<string, int > Cargas;
    Radios=radii_dictionary();
+   Masas=masses_dictionary();
+   Cargas=charges_dictionary();
    for(i=0;i<Nat;i++)
    {
       atom[i].R=assign_radii(Radios,atom[i].Symbol);
+      atom[i].M=assign_mass(Masas,atom[i].Symbol);
+      atom[i].Z=assign_charge(Cargas,atom[i].Symbol);
    }
 }
 
@@ -514,10 +869,16 @@ void Atomic_Structure::read_xyz(string file)
    coordinates_file.close();
    system("rm coordinatesAux");
    map<string, double> Radios;
+   map<string, double> Masas;
+   map<string, int> Cargas;
    Radios=radii_dictionary();
+   Masas=masses_dictionary();
+   Cargas=charges_dictionary();
    for(i=0;i<Nat;i++)
    {
       atom[i].R=assign_radii(Radios,atom[i].Symbol);
+      atom[i].M=assign_mass(Masas,atom[i].Symbol);
+      atom[i].Z=assign_charge(Cargas,atom[i].Symbol);
    }
 }
 
@@ -578,7 +939,12 @@ void Crystal::read_fhi(string file)
 void Cluster::rand_generator(string Symbol_1, int N_Symbol_1, string Symbol_2="AAA", int N_Symbol_2=0 )
 {
    map<string, double> Radios;
+   map<string, double> Masas;
+   map<string, int> Cargas;
    Radios=radii_dictionary();
+   Masas=masses_dictionary();
+   Cargas=charges_dictionary();
+
    Nat=N_Symbol_1+N_Symbol_2;
    srand(time(NULL));
    atom=new Atom[Nat+1];
@@ -729,6 +1095,11 @@ void Cluster::rand_generator(string Symbol_1, int N_Symbol_1, string Symbol_2="A
          atom[i].x[j]=pseudo_rand[i+1][j];
       }
    }
+   for(i=0;i<Nat;i++)
+   {
+      atom[i].M=assign_mass(Masas,atom[i].Symbol);
+      atom[i].Z=assign_charge(Cargas,atom[i].Symbol);
+   }
 }
 
 
@@ -743,8 +1114,12 @@ void Cluster::rand_generator(string Symbol_1, int N_Symbol_1, string Symbol_2="A
 void Cluster::srand_generator(string Symbol_1, int N_Symbol_1, string Symbol_2="AAA", int N_Symbol_2=0, float epsilon=2.5)
 {
 
-  map<string, double> Radios;
+   map<string, double> Radios;
    Radios=radii_dictionary();
+   map<string, double> Masas;
+   Masas=masses_dictionary();
+   map<string, int > Cargas;
+   Cargas=charges_dictionary();
    Nat=N_Symbol_1+N_Symbol_2;
    int random;
    int randomS;
@@ -875,6 +1250,11 @@ void Cluster::srand_generator(string Symbol_1, int N_Symbol_1, string Symbol_2="
 
    }
 
+   for(i=0;i<Nat;i++)
+   {
+      atom[i].M=assign_mass(Masas,atom[i].Symbol);
+      atom[i].Z=assign_charge(Cargas,atom[i].Symbol);
+   }
 }
 
 
@@ -1217,6 +1597,10 @@ Atomic_Structure operator +(Atomic_Structure Mol1, Atomic_Structure Mol2)
    for(i=0;i<Mol1.Nat;i++)
    {
       Joined.atom[i].Symbol=Mol1.atom[i].Symbol;
+      Joined.atom[i].R=Mol1.atom[i].R;
+      Joined.atom[i].Z=Mol1.atom[i].Z;
+      Joined.atom[i].M=Mol1.atom[i].M;
+
       for(j=0;j<3;j++)
       {
          Joined.atom[i].x[j]=Mol1.atom[i].x[j];
@@ -1226,6 +1610,9 @@ Atomic_Structure operator +(Atomic_Structure Mol1, Atomic_Structure Mol2)
    for(i=0;i<Mol2.Nat;i++)
    {
    Joined.atom[i+Mol1.Nat].Symbol=Mol2.atom[i].Symbol;
+   Joined.atom[i+Mol1.Nat].R=Mol1.atom[i].R;
+   Joined.atom[i+Mol1.Nat].Z=Mol1.atom[i].Z;
+   Joined.atom[i+Mol1.Nat].M=Mol1.atom[i].M;
       for(j=0;j<3;j++)
       {
          Joined.atom[i+Mol1.Nat].x[j]=Mol2.atom[i].x[j];
@@ -1250,6 +1637,9 @@ Cluster operator +(Cluster Mol1, Cluster Mol2)
    for(i=0;i<Mol1.Nat;i++)
    {
       Joined.atom[i].Symbol=Mol1.atom[i].Symbol;
+      Joined.atom[i].R=Mol1.atom[i].R;
+      Joined.atom[i].Z=Mol1.atom[i].Z;
+      Joined.atom[i].M=Mol1.atom[i].M;
       for(j=0;j<3;j++)
       {
          Joined.atom[i].x[j]=Mol1.atom[i].x[j];
@@ -1259,6 +1649,9 @@ Cluster operator +(Cluster Mol1, Cluster Mol2)
    for(i=0;i<Mol2.Nat;i++)
    {
    Joined.atom[i+Mol1.Nat].Symbol=Mol2.atom[i].Symbol;
+   Joined.atom[i+Mol1.Nat].R=Mol2.atom[i].R;
+   Joined.atom[i+Mol1.Nat].Z=Mol2.atom[i].Z;
+   Joined.atom[i+Mol1.Nat].M=Mol2.atom[i].M;
       for(j=0;j<3;j++)
       {
          Joined.atom[i+Mol1.Nat].x[j]=Mol2.atom[i].x[j];
