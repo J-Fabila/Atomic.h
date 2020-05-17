@@ -2427,6 +2427,35 @@ void coulomb_matrix(Atomic_Structure Molecule1, string energy, string file)
    dat.close();
 
 }
+void output_qe_to_movie(string file, string file_movie)
+{
+   string comm=" cp  ";
+          comm+=file+" output.temp ; n_steps=$(grep \"ATOMIC_POSITIONS\" output.temp  | wc -l) ; ";
+          comm+="nats=$(grep \"number of atoms\" output.temp | awk '{print $5}') ; rep=\"ATOMIC_POSITIONS (angstrom)\" ; ";
+          comm+="rep2=\"$nats\\n\" ; ";
+          comm+="grep -A $nats \"ATOMIC_POSITIONS\" output.temp   | sed \"s/$rep/$rep2/g\" | sed '/--/d' > "+file_movie;
+   system(comm.c_str());
+}
+
+void output_qe_split(string file, string dir)
+{
+   string comm=" #!/bin/bash  \n   cp  ";
+          comm+=file+" output.temp ; n_steps=$(grep \"ATOMIC_POSITIONS\" output.temp  | wc -l) ; ";
+          comm+="nats=$(grep \"number of atoms\" output.temp | awk '{print $5}') ; rep=\"ATOMIC_POSITIONS (angstrom)\" ; ";
+          comm+="rep2=\"$nats\\n\" ; ";
+          comm+="grep -A $nats \"ATOMIC_POSITIONS\" output.temp   | sed \"s/$rep/$rep2/g\" | sed '/--/d' > pEli.xyz ; ";
+          comm+="to=$(echo $nats+2 | bc ) ; t=$(echo $n_steps+1 | bc )  ;  ";
+          comm+=" for ((i=1;i<$t;i++)); do head -$( echo $i*$to | bc ) pEli.xyz | tail -$to > aUxy$i.xyz ;  done ;";
+          comm+=" grep \"!\" output.temp > energias ; mkdir "+dir;
+          comm+=" ;  for ((i=1;i<$t;i++)); do energia=$(head -$i energias | tail -1 | awk '{print $5}' )  ; ";
+          comm+=" sed \"2s/.*/$energia/\" aUxy$i.xyz > "+dir+"/coords$i.xyz ; done ; rm aUxy*.xyz energias  output.temp  pEli.xyz";
+          //cout<<comm<<endl;
+          ofstream dat("aUxi.sh");
+          dat<<comm<<endl;
+   system("chmod +x aUxi.sh ; bash aUxi.sh ; rm aUxi.sh ");
+   dat.close();
+}
+
 /*
 
 void Cluster::srand_generator_alternativo(string Symbol_1, int N_Symbol_1, string Symbol_2="AAA", int N_Symbol_2=0, float epsilon=1.0)
