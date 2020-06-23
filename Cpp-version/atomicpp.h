@@ -45,8 +45,6 @@ class Atom
      double R;
      double M;
      int Z;
-     // A lo mejor tambien le podrías poner los
-     // parámetros para dinámica de L-J
      Atom();
      void read_Atom(string, float, float, float);
 };
@@ -77,6 +75,21 @@ double Atomic_Distance(Atom atomo1, Atom atomo2)
    return sqrt(suma);
 }
 
+/********************************************************************/
+/******************* Simulation_Cell Definition *********************/
+/********************************************************************/
+
+class Simulation_Cell{
+    public:
+       double M[3][3]={ {25.00,0.00,0.00}, {0.00,25.00,0.00},{0.00,0.00,25.00} };
+       bool periodicity=false;
+       Simulation_Cell(double M[3][3],bool periodicity);
+       Simulation_Cell();
+       ~Simulation_Cell();
+       void read_VASP(string file,bool periodicity);
+       void print_screen();
+};
+
 
 /********************************************************************/
 /******************* Atomic_Structure Definition ********************/
@@ -100,6 +113,7 @@ class Atomic_Structure{
         double y_min(); double y_max();
         double z_min(); double z_max();
         bool fit_in(float, float, float, float, float, float);
+        bool fit_in(Simulation_Cell);
         void show(string visualizer);
 
 };
@@ -162,6 +176,49 @@ class Molecule : public Atomic_Structure{
 };
 
 
+/********************************************************************/
+/********************** Emptiness Constructor ***********************/
+/******************* Simulation_Cell  super_cell; *******************/
+/********************************************************************/
+
+Simulation_Cell::Simulation_Cell(){}
+
+
+/********************************************************************/
+/******************** Constructor from Matrix ***********************/
+/************* Simulation_Cell  super_cell(M,false); ****************/
+/********************************************************************/
+
+Simulation_Cell::Simulation_Cell(double _M[3][3],bool _periodicity)
+{
+  M[0][0]=_M[0][0]; M[1][0]=_M[1][0]; M[2][0]=_M[2][0];
+  M[0][1]=_M[0][1]; M[1][1]=_M[1][1]; M[2][1]=_M[2][1];
+  M[0][2]=_M[0][2]; M[1][2]=_M[1][2]; M[2][2]=_M[2][2];
+  periodicity=_periodicity;
+}
+
+
+/********************************************************************/
+/********************* Constructor from file ************************/
+/************* Simulation_Cell  super_cell(file,false); ****************/
+/********************************************************************/
+
+void Simulation_Cell::read_VASP(string file,bool _periodicity)
+{
+   string command="head -5 ";
+          command+=file;
+          command+=" | tail -3 > matriz ";
+   system(command.c_str());
+   ifstream fm("matriz");
+   for(i=0;i<3;i++) //Lee los elementos de matriz
+   {
+      fm>>M[i][0]>> M[i][1]>>M[i][2];
+   }
+   fm.close();
+   system("rm matriz");
+  periodicity=_periodicity;
+}
+
 
 /********************************************************************/
 /********************** Emptiness Constructor ***********************/
@@ -215,7 +272,7 @@ Atomic_Structure::~Atomic_Structure(){}
 Molecule::~Molecule(){}
 Cluster::~Cluster(){}
 Crystal::~Crystal(){}
-
+Simulation_Cell::~Simulation_Cell(){}
 
 /**************************** random_number *************************/
 /********************* float r=random_number(0,10); *****************/
@@ -800,7 +857,7 @@ double Atomic_Structure::x_min()
 
 
 /******************************* fit_in *****************************/
-/*********** molecule.fit_in(xmin,xmax,ymin,ymax,zmin,zmax **********/
+/********** molecule.fit_in(xmin,xmax,ymin,ymax,zmin,zmax) **********/
 /********************************************************************/
 
 bool Atomic_Structure::fit_in(float xmin, float xmax, float ymin, float ymax, float zmin, float zmax)
@@ -824,6 +881,31 @@ bool Atomic_Structure::fit_in(float xmin, float xmax, float ymin, float ymax, fl
    return fit;
 }
 
+
+/******************************* fit_in *****************************/
+/********************** molecule.fit_in(super_cell) *****************/
+/********************************************************************/
+
+bool Atomic_Structure::fit_in(Simulation_Cell super_cell)
+{
+   float xrange=super_cell.M[0][0]+super_cell.M[1][0]+super_cell.M[2][0];
+   float yrange=super_cell.M[0][1]+super_cell.M[1][1]+super_cell.M[2][1];
+   float zrange=super_cell.M[0][2]+super_cell.M[1][2]+super_cell.M[2][2];
+   bool fit;
+   float mol_xrange=x_max()-x_min();
+   float mol_yrange=y_max()-y_min();
+   float mol_zrange=z_max()-z_min();
+
+   if(mol_xrange < xrange && mol_yrange < yrange && mol_zrange < zrange)
+   {
+      fit=true;
+   }
+   else
+   {
+      fit=false;
+   }
+   return fit;
+}
 
 /***************************** read_xyz *****************************/
 /********************* Molecule  molecule_name; *********************/
@@ -2109,7 +2191,7 @@ void Crystal::print_VASP(string outputfile,string Titulo, float Factor)
 
 /***************************** print_fhi ****************************/
 /********************* Molecule  molecule_name; *********************/
-/**************** molecule_name.print_VASP(argv[1]); ****************/
+/***************** molecule_name.print_fhi(argv[1]); ****************/
 /********************************************************************/
 
 void Atomic_Structure::print_fhi(string outputfile)
@@ -2125,7 +2207,7 @@ void Atomic_Structure::print_fhi(string outputfile)
 
 /***************************** print_fhi ****************************/
 /********************* Molecule  molecule_name; *********************/
-/**************** molecule_name.print_VASP(argv[1]); ****************/
+/**************** molecule_name.print_fhi(argv[1]); ****************/
 /********************************************************************/
 
 void Crystal::print_fhi(string outputfile)
