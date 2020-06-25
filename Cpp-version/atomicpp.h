@@ -32,6 +32,48 @@ using namespace std;
 
 
 /********************************************************************/
+/*********************** Electron Definition ************************/
+/********************************************************************/
+
+class Electron
+{
+   public:
+     double x[3];
+     double v[3];
+     double a[3];
+     double M;
+     double Z;
+     double spin;
+     Electron();
+     void initialize_Electron(double, double, double, double);
+     void print_electron(string);
+};
+
+Electron::Electron()
+{
+   spin=0;
+   Z=-1; //-1 e ; −1.602 176 565(35)×10−19 C​
+   M=1/1822.8884; // 1822.8884845 (14)−1 uma ; 9,109 382 91(40)×10−31 kg;
+   x[0]=0.0; x[1]=0.0; x[2]=0.0;
+   v[0]=0.0; v[1]=0.0; v[2]=0.0;
+   a[0]=0.0; a[1]=0.0; a[2]=0.0;
+}
+
+
+void Electron::initialize_Electron(double _x, double _y, double _z,double _spin)
+{
+   x[0] = _x;
+   x[1] = _y;
+   x[2] = _z;
+   spin = _spin;
+}
+
+void Electron::print_electron(string file)
+{
+   ofstream out_f(file);
+   out_f<<x[0]<<" "<<x[1]<<" "<<x[2]<<" "<<spin<<endl;
+}
+/********************************************************************/
 /************************* Atom Definition **************************/
 /********************************************************************/
 
@@ -45,6 +87,8 @@ class Atom
      double R;
      double M;
      int Z;
+     int charge;
+     Electron *electron;
      Atom();
      void read_Atom(string, float, float, float);
 };
@@ -52,6 +96,7 @@ class Atom
 Atom::Atom()
 {
    Symbol="AAA"; R=0; Z=0; M=0;
+   electron=NULL; charge=0;
    x[0]=0.0; x[1]=0.0; x[2]=0.0;
    v[0]=0.0; v[1]=0.0; v[2]=0.0;
    a[0]=0.0; a[1]=0.0; a[2]=0.0;
@@ -98,6 +143,7 @@ class Simulation_Cell{
 class Atomic_Structure{
      public:
         int Nat;
+        int total_charge;
         Atom *atom;
         Atomic_Structure(string);
         Atomic_Structure();
@@ -117,6 +163,7 @@ class Atomic_Structure{
         void show(string visualizer);
         //void molecular_dynamic(string integration_algorithm, string force_field, Simulation_Cell box, );
         void geometry_optimization(string movie_file,int max_steps, double tolerance, double cutoff_radii, int optimization_algorithm, string force_field);
+        void initialize_electronic_density(int initialization, int charge);
 };
 
 /********************************************************************/
@@ -139,6 +186,7 @@ class Cluster : public Atomic_Structure{
         void srand_generator(string, int, string, int, float);
         void rand_generator(string, int, string, int);
         void centroid();
+        void simulated_annealing(float kick_s, string movie_file,int max_steps, double tolerance, double cutoff_radii, int optimization_algorithm, string force_field);
 };
 
 
@@ -230,6 +278,7 @@ void Simulation_Cell::read_VASP(string file,bool _periodicity)
 Atomic_Structure::Atomic_Structure()
 {
   Nat=0;
+  total_charge=0;
   atom=NULL;
 }
 
@@ -2700,7 +2749,7 @@ double Force_LJ(Atom a1, Atom a2)
    f=48*(epsilon/pow(Dist,2))*((pow( (sigma/Dist) , 12 ) - pow( (sigma/Dist) , 6 )/2 ));
    return f;
 }
-/*
+
 void Atomic_Structure::molecular_dynamic(Simulation_Cell box, int nsteps, float temperature, double cutoff_radii=10, string movie_file="false", string force_field="LJ")
 {
 //According with:  Rapaport, D.C., \textit{The Art of Molecular Dynamics Simulation}, Cambridge University Press, Cambridge, 1995.
@@ -2709,7 +2758,7 @@ void Atomic_Structure::molecular_dynamic(Simulation_Cell box, int nsteps, float 
      float deltaT=0.0001;
      float Dist;
      float sep;
-     double swap;
+     double swap, distancia, dx, dy, dz;
 
      while(time < nsteps)
      {
@@ -2719,15 +2768,21 @@ void Atomic_Structure::molecular_dynamic(Simulation_Cell box, int nsteps, float 
            atom[i].a[0]=0.0; atom[i].a[1]=0.0; atom[i].a[2]=0.0;
            for(j=0;j<Nat;j++)
            {
-              /*if(box.periodicity==false)
+              if(box.periodicity==false)
               {
-
+                  distancia=Atomic_Distance(atom[i],atom[j]);
               }
               else
               {
-
-              }*/ /*
-              if(Atomic_Distance(atom[i],atom[j])<cutoff_radii)
+                 dx=atom[i].x[0]-atom[j].x[0];
+                 dy=atom[i].x[1]-atom[j].x[1];
+                 dz=atom[i].x[2]-atom[j].x[2];
+                 if (abs(dx) > 0.5*xrange){ dx = atom[i].x[0]+xrange-atom[j].x[0]; }
+                 if (abs(dy) > 0.5*yrange){ dy = atom[i].x[0]+yrange-atom[j].x[0]; }
+                 if (abs(dz) > 0.5*xrange){ dz = atom[i].x[0]+zrange-atom[j].x[0]; }
+                 distancia=sqrt( pow(dx,2) + pow(dy,2) + pow(dz,2) ) ;
+              }
+              if(distancia<cutoff_radii)
               {
                  if(i!=j)
                  {
@@ -2756,9 +2811,9 @@ void Atomic_Structure::molecular_dynamic(Simulation_Cell box, int nsteps, float 
         }
         time++;
      }
-}*/
+}
 
-void Atomic_Structure::geometry_optimization(string movie_file="false",int max_steps=1000, double tolerance=0.0001, double cutoff_radii=10, int optimization_algorithm=0, string force_field="LJ")
+void Atomic_Structure::geometry_optimization(string movie_file="false",int max_steps=1000, double tolerance=0.001, double cutoff_radii=10, int optimization_algorithm=0, string force_field="LJ")
 { // optimization_algorithm = 0 : gradient_descent ; 1 : conjugate_gradient ; 2 : quasi_newton
    int current_step=0;
    double dE=100.0; // Diferencia energética ; valor inicial irrelevante;
@@ -2848,3 +2903,66 @@ void Atomic_Structure::geometry_optimization(string movie_file="false",int max_s
       current_step++;
    } //end while
 } //end function
+
+
+void Atomic_Structure::initialize_electronic_density(int initialization=0, int charge=0)
+{// initialization == 0 : random ; initialization == 1 : from file ; et al
+   total_charge=0;
+   int atomic_charge, _conter=0;
+   //Counts total electric charge, sum each atomic charge
+   for(i=0;i<Nat;i++)
+   {
+      atomic_charge=atom[i].Z+atom[i].charge;
+      total_charge=total_charge+atomic_charge;
+   }
+   total_charge=total_charge+charge;
+   cout<<" carga total "<<total_charge<<endl;
+   //Genera los arreglos
+   switch (initialization) {
+     case 0:
+        for(i=0;i<Nat;i++)
+        {
+           atomic_charge=atom[i].Z+atom[i].charge;
+           atom[i].electron=new Electron[atomic_charge+1];
+           for(j=0;j<atomic_charge;j++)
+           {
+              for(k=0;k<3;k++)
+              {
+                 atom[i].electron[j].x[k]=atom[i].x[k]+random_number(0,atom[i].R);
+                 cout<<atom[i].electron[j].x[k]<<" ";
+              }
+              cout<<endl;
+              _conter++;
+              if(total_charge<_conter)
+              {
+                 break;
+              }
+           }
+        }
+        break;
+    /*  case 1:
+      ifstream coordinates_file(file);
+      coordinates_file>>atom[i].electron[j].x[0]>>atom[i].electron[j].x[1]>>atom[i].electron[j].x[2];*/
+   }
+}
+
+
+
+void Cluster::simulated_annealing(float kick_s=1.5,string movie_file="false",int max_steps=1000, double tolerance=0.00001, double cutoff_radii=10, int optimization_algorithm=0, string force_field="LJ")
+{
+  print_xyz("temporal.xyz");
+  for(i=0;i<Nat;i++)
+  {
+     atom[i].x[0]=atom[i].x[0]*kick_s+random_number(-1,1)*kick_s/2;
+     atom[i].x[1]=atom[i].x[1]*kick_s+random_number(-1,1)*kick_s/2;
+     atom[i].x[2]=atom[i].x[2]*kick_s+random_number(-1,1)*kick_s/2;
+  }
+  geometry_optimization("temporal2.xyz");
+  if(!(movie_file=="false"))
+  {
+     string command="cat temporal.xyz > "+movie_file;
+            command+=" ; cat temporal2.xyz >> "+movie_file;
+     system(command.c_str());
+  }
+  system("rm temporal.xyz temporal2.xyz");
+}
