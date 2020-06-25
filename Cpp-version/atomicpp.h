@@ -116,7 +116,7 @@ class Atomic_Structure{
         bool fit_in(Simulation_Cell);
         void show(string visualizer);
         //void molecular_dynamic(string integration_algorithm, string force_field, Simulation_Cell box, );
-        void geometry_optimization(string movie_file,int max_steps, double tolerance, double eta, double cutoff_radii, int optimization_algorithm, string force_field);
+        void geometry_optimization(string movie_file,int max_steps, double tolerance, double cutoff_radii, int optimization_algorithm, string force_field);
 };
 
 /********************************************************************/
@@ -2430,7 +2430,7 @@ void Atomic_Structure::show(string visualizer="iqmol")
       }
       else
       {
-         if(visualizer=="vesta")
+         if(visualizer=="vesta" || visualizer=="VESTA")
          {
             system("VESTA visualizer_tmp.xyz 2> /dev/null > /dev/null");
          }
@@ -2684,8 +2684,8 @@ void output_qe_split(string file, string dir)
 
 double Energy_LJ(Atom a1, Atom a2)
 {
-   double sigma=(a1.R+a2.R)*1.122462048; // Armstrongs
-   double epsilon=-4.0; // eV
+   double sigma=(a1.R+a2.R)*0.8163; // Armstrongs
+   double epsilon=1; // eV
    double Dist=Atomic_Distance(a1,a2);
    double energia = 4*epsilon*((  pow( (sigma/Dist) , 12 ) - pow( (sigma/Dist) , 6 ) ));
    return energia;
@@ -2693,8 +2693,8 @@ double Energy_LJ(Atom a1, Atom a2)
 
 double Force_LJ(Atom a1, Atom a2)
 {
-   double sigma=(a1.R+a2.R)*1.122462048; // Armstrongs
-   double epsilon=4.0; // eV
+   double sigma=(a1.R+a2.R)*0.8163; // Armstrongs
+   double epsilon=300; // eV
    double f; // auxiliar
    double Dist=Atomic_Distance(a1,a2);
    f=48*(epsilon/pow(Dist,2))*((pow( (sigma/Dist) , 12 ) - pow( (sigma/Dist) , 6 )/2 ));
@@ -2758,12 +2758,13 @@ void Atomic_Structure::molecular_dynamic(Simulation_Cell box, int nsteps, float 
      }
 }*/
 
-void Atomic_Structure::geometry_optimization(string movie_file="false",int max_steps=1000, double tolerance=0.0001, double eta=0.01, double cutoff_radii=10, int optimization_algorithm=0, string force_field="LJ")
+void Atomic_Structure::geometry_optimization(string movie_file="false",int max_steps=1000, double tolerance=0.0001, double cutoff_radii=10, int optimization_algorithm=0, string force_field="LJ")
 { // optimization_algorithm = 0 : gradient_descent ; 1 : conjugate_gradient ; 2 : quasi_newton
    int current_step=0;
    double dE=100.0; // Diferencia energética ; valor inicial irrelevante;
    string command;
    double fuerza, energia=-100000, last_energy;
+   double eta=0.01;
    cout<<" Entering geometry optimization loop ... "<<endl;
 
    while(current_step<max_steps && abs(dE)>tolerance)
@@ -2807,10 +2808,16 @@ void Atomic_Structure::geometry_optimization(string movie_file="false",int max_s
             {
                for(k=0;k<3;k++)
                {
-                  atom[i].x[k]=atom[i].x[k]+(eta*atom[i].a[k]);
-                  cout<<eta*atom[i].a[k]<<" ";
+                  if(abs(atom[i].a[k])>1.0)
+                  {
+                     atom[i].x[k]=atom[i].x[k]+0.005*((atom[i].a[k])/(abs(atom[i].a[k])));
+                  }
+                  else
+                  {
+                     atom[i].x[k]=atom[i].x[k]+(eta*atom[i].a[k]);
+                     //atom[i].x[k]=atom[i].x[k]+((eta*atom[i].a[k])/(1*abs(eta*atom[i].a[k])));
+                  }
                }
-               cout<<endl;
             }
             break;
          /*case "conjugated_gradient":
