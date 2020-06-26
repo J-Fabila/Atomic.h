@@ -161,7 +161,7 @@ class Atomic_Structure{
         bool fit_in(float, float, float, float, float, float);
         bool fit_in(Simulation_Cell);
         void show(string visualizer);
-        //void molecular_dynamic(string integration_algorithm, string force_field, Simulation_Cell box, );
+        void molecular_dynamic(Simulation_Cell box,  int nsteps, string movie_file, float temperature, double cutoff_radii,  string force_field);
         void geometry_optimization(string movie_file,int max_steps, double tolerance, double cutoff_radii, int optimization_algorithm, string force_field);
         void initialize_electronic_density(int initialization, int charge);
 };
@@ -2750,7 +2750,7 @@ double Force_LJ(Atom a1, Atom a2)
    return f;
 }
 
-void Atomic_Structure::molecular_dynamic(Simulation_Cell box, int nsteps, float temperature, double cutoff_radii=10, string movie_file="false", string force_field="LJ")
+void Atomic_Structure::molecular_dynamic(Simulation_Cell box,  int nsteps=1000, string movie_file="false", float temperature=300, double cutoff_radii=10,  string force_field="LJ")
 {
 //According with:  Rapaport, D.C., \textit{The Art of Molecular Dynamics Simulation}, Cambridge University Press, Cambridge, 1995.
 
@@ -2759,7 +2759,9 @@ void Atomic_Structure::molecular_dynamic(Simulation_Cell box, int nsteps, float 
      float Dist;
      float sep;
      double swap, distancia, dx, dy, dz;
-
+     double xrange=box.M[0][0];
+     double yrange=box.M[1][1];
+     double zrange=box.M[2][2];
      while(time < nsteps)
      {
         //CALCULA LAS FUERZAS
@@ -2772,14 +2774,26 @@ void Atomic_Structure::molecular_dynamic(Simulation_Cell box, int nsteps, float 
               {
                   distancia=Atomic_Distance(atom[i],atom[j]);
               }
-              else
+              else // Periodic Bound Conditions
               {
                  dx=atom[i].x[0]-atom[j].x[0];
                  dy=atom[i].x[1]-atom[j].x[1];
                  dz=atom[i].x[2]-atom[j].x[2];
-                 if (abs(dx) > 0.5*xrange){ dx = atom[i].x[0]+xrange-atom[j].x[0]; }
-                 if (abs(dy) > 0.5*yrange){ dy = atom[i].x[0]+yrange-atom[j].x[0]; }
-                 if (abs(dz) > 0.5*xrange){ dz = atom[i].x[0]+zrange-atom[j].x[0]; }
+                 if (abs(dx) > 0.5*xrange)
+                 {
+                     if(dx>0){ dx = xrange + atom[j].x[0]-atom[i].x[0]; }
+                     else { dx = xrange + atom[i].x[0]-atom[j].x[0]; }
+                 }
+                 if (abs(dy) > 0.5*yrange)
+                 {
+                     if(dy>0){ dy = yrange + atom[j].x[1]-atom[i].x[1]; }
+                     else { dy = yrange + atom[i].x[1]-atom[j].x[1]; }
+                 }
+                 if (abs(dz) > 0.5*xrange)
+                 {
+                     if(dz>0){ dz = zrange + atom[j].x[2]-atom[i].x[2]; }
+                     else { dz = zrange + atom[i].x[2]-atom[j].x[2]; }
+                 }
                  distancia=sqrt( pow(dx,2) + pow(dy,2) + pow(dz,2) ) ;
               }
               if(distancia<cutoff_radii)
@@ -2799,22 +2813,32 @@ void Atomic_Structure::molecular_dynamic(Simulation_Cell box, int nsteps, float 
         {
            for(k=0;k<3;k++)
            {
-              atom[i].v[k]=atom[i].v[k]+(time_step*atom[i].a[k]);//time;
+              atom[i].v[k]=atom[i].v[k]+(deltaT*atom[i].a[k]);//time;
            }
         }
         for(i=0;i<Nat;i++)
         {
            for(k=0;k<3;k++)
            {
-              atom[i].x[k]=atom[i].x[k]+(time_step*atom[i].a[k]);//time;
+              atom[i].x[k]=atom[i].x[k]+(deltaT*atom[i].a[k]);//time;
            }
         }
         time++;
      }
 }
+atom[i].x[k]=atom[i].x[k]+(atom[i].v[k]*deltaT)+(f[k]*pow(deltaT,2)/(2*atom[i].M))
+
+atom[i].v[k]=atom[i].v[k]+(f[k]+f[k+i])*deltaT/(2*atom[i].M)
+
+
+
+
+
+
 
 void Atomic_Structure::geometry_optimization(string movie_file="false",int max_steps=1000, double tolerance=0.001, double cutoff_radii=10, int optimization_algorithm=0, string force_field="LJ")
 { // optimization_algorithm = 0 : gradient_descent ; 1 : conjugate_gradient ; 2 : quasi_newton
+  // gradient_descent is recomended only for Lennard-Jones Potential, conjugate_gradient and quasi_newton might be more suitable for other potentials
    int current_step=0;
    double dE=100.0; // Diferencia energética ; valor inicial irrelevante;
    string command;
@@ -2845,10 +2869,10 @@ void Atomic_Structure::geometry_optimization(string movie_file="false",int max_s
                            {
                               fuerza=Force_LJ(atom[i],atom[j]);
                            }
-                         /*else if(force_field=="ML")
-                           {
-                              fuerza=Force_ML(atom[i],atom[j]);
-                           }*/
+                         //else if(force_field=="ML")
+                           //{
+                            //  fuerza=Force_ML(atom[i],atom[j]);
+                           //}
                            atom[i].a[k]=atom[i].a[k]+fuerza*(atom[i].x[k]-atom[j].x[k]);
                         }
                         energia=Energy_LJ(atom[i],atom[j])+energia;
@@ -2875,9 +2899,9 @@ void Atomic_Structure::geometry_optimization(string movie_file="false",int max_s
                }
             }
             break;
-         /*case "conjugated_gradient":
-            ;
-            break;*/
+         //case "conjugated_gradient":
+          //  ;
+          //  break;
       }//end switch
       //IMPRIME LAS COORDENADAS PARA HACER PELICULA
       if(!(movie_file=="false"))
@@ -2904,9 +2928,119 @@ void Atomic_Structure::geometry_optimization(string movie_file="false",int max_s
    } //end while
 } //end function
 
+/*
+void Atomic_Structure::geometry_optimization(string movie_file="false",int max_steps=1000, double tolerance=0.001, double cutoff_radii=10, int optimization_algorithm=0, string force_field="LJ")
+{ // optimization_algorithm = 0 : gradient_descent ; 1 : conjugate_gradient ; 2 : quasi_newton
+   int current_step=0;
+   double dE=100.0; // Diferencia energética ; valor inicial irrelevante;
+   string command;
+   double f[Nat][Nat][3], fuerza, energia=-100000, last_energy;
+   double eta=0.01;
+
+   cout<<" Entering geometry optimization loop ... "<<endl;
+
+   while(current_step<max_steps && abs(dE)>tolerance)
+   {
+      last_energy=energia;
+      switch (optimization_algorithm)
+      {
+         case 0: ///// / / / /  /  /  /   /    /    /   /  / / / / / ///////  "gradient_descent"
+            // CALCULA LAS FUERZAS individuales
+            for(i=0;i<Nat;i++)
+            {
+               for(j>i;j<Nat;j++)
+               {
+                  //if(Atomic_Distance(atom[i],atom[j])<cutoff_radii)
+                  //{
+                     for(k=0;k<3;k++)
+                     {
+                        if(force_field=="LJ")
+                        {
+                           fuerza=Force_LJ(atom[i],atom[j]);
+                        }
+                      //else if(force_field=="ML")
+                      //  {
+                      //     fuerza=Force_ML(atom[i],atom[j]);
+                      //  }
+                        f[i][j][k]=fuerza*(atom[i].x[k]-atom[j].x[k]);
+                        f[j][i][k]=-f[i][j][k] ;
+                     }
+                  //}
+               }
+            }
+            //Calcula fuerzas totales
+            energia=0;
+            for(i=0;i<Nat;i++)
+            {
+               atom[i].a[0]=0.0; atom[i].a[1]=0.0; atom[i].a[2]=0.0;
+               for(j=0;j<Nat;j++)
+               {
+  //                if(Atomic_Distance(atom[i],atom[j])<cutoff_radii)
+    //              {
+                     if(i!=j)
+                     {
+                        for(k=0;k<3;k++)
+                        {
+                           atom[i].a[k]=atom[i].a[k]+f[i][j][k];
+                        }
+                        //////////////// Esta línea se puede eliminar y dejar que el umbral sea de fuerzas y no energías
+                        energia=Energy_LJ(atom[i],atom[j])+energia;
+                     }
+                  //}
+               }
+            }
+            //CALCULA Diferencias energéticas
+            dE=last_energy-energia;
+            //ACTUALIZA LAS  POSICIONES
+            for(i=0;i<Nat;i++)
+            {
+               for(k=0;k<3;k++)
+               {
+                  if(abs(atom[i].a[k])>1.0)
+                  {
+                     atom[i].x[k]=atom[i].x[k]+0.005*((atom[i].a[k])/(abs(atom[i].a[k])));
+                  }
+                  else
+                  {
+                     atom[i].x[k]=atom[i].x[k]+(eta*atom[i].a[k]);
+                     //atom[i].x[k]=atom[i].x[k]+((eta*atom[i].a[k])/(1*abs(eta*atom[i].a[k])));
+                  }
+               }
+            }
+            break;
+//         case "conjugated_gradient":
+  //          ;
+    //        break;
+      }//end switch
+      //IMPRIME LAS COORDENADAS PARA HACER PELICULA
+      if(!(movie_file=="false"))
+      {
+         print_xyz("temp.xyz");
+         command="cat temp.xyz >> "+movie_file;
+         system(command.c_str());
+         system("rm temp.xyz");
+      }
+      //IMPRIME INFORMACION DEL SISTEMA
+    //  if(current_step>0)
+      //{
+         cout<<"Step : "<<current_step<<"/"<<max_steps<<"  Current energy : "<<energia<<" dE : "<<dE<<endl;
+    //  }
+      if((current_step+1)>max_steps)
+      {
+         cout<<" Reached maximum number of steps ... Stopping minimization "<<endl;
+      }
+      if(abs(dE)<tolerance)
+      {
+         cout<<" Reached energy accuracy ... Stopping minimization "<<endl;
+      }
+      current_step++;
+   } //end while
+} //end function
+*/
 
 void Atomic_Structure::initialize_electronic_density(int initialization=0, int charge=0)
-{// initialization == 0 : random ; initialization == 1 : from file ; et al
+{
+  // initialization == 0 : random ; initialization == 1 : from file ; et al
    total_charge=0;
    int atomic_charge, _conter=0;
    //Counts total electric charge, sum each atomic charge
