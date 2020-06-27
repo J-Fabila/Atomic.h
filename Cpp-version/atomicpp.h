@@ -2740,95 +2740,138 @@ double Energy_LJ(Atom a1, Atom a2)
    return energia;
 }
 
-double Force_LJ(Atom a1, Atom a2)
+double Force_LJ(Atom a1, Atom a2,string calculation)
 {
    double sigma=(a1.R+a2.R)*0.8163; // Armstrongs
-   double epsilon=300; // eV
+   double epsilon;
    double f; // auxiliar
    double Dist=Atomic_Distance(a1,a2);
+   if(calculation=="go")
+   {
+      epsilon=300; // eV
+   }
+   else if(calculation=="md")
+   {
+      epsilon=3; // eV
+   }
    f=48*(epsilon/pow(Dist,2))*((pow( (sigma/Dist) , 12 ) - pow( (sigma/Dist) , 6 )/2 ));
    return f;
 }
 
 void Atomic_Structure::molecular_dynamic(Simulation_Cell box,  int nsteps=1000, string movie_file="false", float temperature=300, double cutoff_radii=10,  string force_field="LJ")
 {
+//http://phys.ubbcluj.ro/~tbeu/MD/C2_for.pdf
 //According with:  Rapaport, D.C., \textit{The Art of Molecular Dynamics Simulation}, Cambridge University Press, Cambridge, 1995.
-
-     int time=0;
-     float deltaT=0.0001;
-     float Dist;
-     float sep;
-     double swap, distancia, dx, dy, dz;
-     double xrange=box.M[0][0];
-     double yrange=box.M[1][1];
-     double zrange=box.M[2][2];
-     while(time < nsteps)
+  int time=0;
+  float deltaT=0.1;
+  float Dist;
+  float sep;
+  double swap, distancia, dx, dy, dz, vdt_2[3];
+  double fuerza;
+  double xrange=box.M[0][0];
+  double yrange=box.M[1][1];
+  double zrange=box.M[2][2];
+  string command;
+  while(time < nsteps)
+  {
+     for(i=0;i<Nat;i++)
+     {
+        for(k=0;k<3;k++)
+        {
+           // Actualiza las posiciones
+           vdt_2[k]        = atom[i].v[k]+(atom[i].a[k]*deltaT/2.0);
+           atom[i].x[k] = atom[i].x[k] + vdt_2[k]/deltaT;
+//cout<<vdt_2[k]<<" ";
+        }
+//cout<<endl;
+     }
+     for(i=0;i<Nat;i++)
      {
         //CALCULA LAS FUERZAS
-        for(i=0;i<Nat;i++)
+        atom[i].a[0]=0.0; atom[i].a[1]=0.0; atom[i].a[2]=0.0;
+        for(j=0;j<Nat;j++)
         {
-           atom[i].a[0]=0.0; atom[i].a[1]=0.0; atom[i].a[2]=0.0;
-           for(j=0;j<Nat;j++)
+           if(box.periodicity==false)
            {
-              if(box.periodicity==false)
+              distancia=Atomic_Distance(atom[i],atom[j]);
+           }
+           else // Periodic Bound Conditions
+           {
+              dx=atom[i].x[0]-atom[j].x[0];
+              dy=atom[i].x[1]-atom[j].x[1];
+              dz=atom[i].x[2]-atom[j].x[2];
+              if (abs(dx) > 0.5*xrange)
               {
-                  distancia=Atomic_Distance(atom[i],atom[j]);
+                 if(dx>0){ dx = xrange + atom[j].x[0]-atom[i].x[0]; }
+                 else { dx = xrange + atom[i].x[0]-atom[j].x[0]; }
               }
-              else // Periodic Bound Conditions
+              if (abs(dy) > 0.5*yrange)
               {
-                 dx=atom[i].x[0]-atom[j].x[0];
-                 dy=atom[i].x[1]-atom[j].x[1];
-                 dz=atom[i].x[2]-atom[j].x[2];
-                 if (abs(dx) > 0.5*xrange)
-                 {
-                     if(dx>0){ dx = xrange + atom[j].x[0]-atom[i].x[0]; }
-                     else { dx = xrange + atom[i].x[0]-atom[j].x[0]; }
-                 }
-                 if (abs(dy) > 0.5*yrange)
-                 {
-                     if(dy>0){ dy = yrange + atom[j].x[1]-atom[i].x[1]; }
-                     else { dy = yrange + atom[i].x[1]-atom[j].x[1]; }
-                 }
-                 if (abs(dz) > 0.5*xrange)
-                 {
-                     if(dz>0){ dz = zrange + atom[j].x[2]-atom[i].x[2]; }
-                     else { dz = zrange + atom[i].x[2]-atom[j].x[2]; }
-                 }
-                 distancia=sqrt( pow(dx,2) + pow(dy,2) + pow(dz,2) ) ;
+                 if(dy>0){ dy = yrange + atom[j].x[1]-atom[i].x[1]; }
+                 else { dy = yrange + atom[i].x[1]-atom[j].x[1]; }
               }
-              if(distancia<cutoff_radii)
+              if (abs(dz) > 0.5*xrange)
               {
-                 if(i!=j)
+                 if(dz>0){ dz = zrange + atom[j].x[2]-atom[i].x[2]; }
+                 else { dz = zrange + atom[i].x[2]-atom[j].x[2]; }
+              }
+              distancia=sqrt( pow(dx,2) + pow(dy,2) + pow(dz,2) ) ;
+           }
+           if(distancia<cutoff_radii)
+           {
+              if(!(i==j))
+              {
+                 if(force_field=="LJ")
                  {
-                    for(k=0;k<3;k++)
-                    {
-                    atom[i].a[k]=atom[i].a[k]+Force_LJ(atom[i],atom[j]);
-                    }
+                    fuerza=Force_LJ(atom[i],atom[j],"md");
+                                  cout<<fuerza<<" i "<<i<<" j "<<j<<endl;
+                 }
+                 else if(force_field=="ML")
+                 {
+                    cout<<"ML Force Field Not implemented yet ... coming soon!"<<endl;
+                    //fuerza=Force_ML(atom[i],atom[j]);
+                 }
+                 for(k=0;k<3;k++)
+                 {
+                 /////////////////////////////////////////////////
+                    atom[i].a[k]=atom[i].a[k]+((fuerza/atom[i].M)*(atom[i].x[k]-atom[j].x[k]));
+                 /////////////////////////////////////////////////
                  }
               }
            }
         }
-         //CALCULA LAS VELOCIDADES
-        for(i=0;i<Nat;i++)
+        for(k=0;k<3;k++)
         {
-           for(k=0;k<3;k++)
-           {
-              atom[i].v[k]=atom[i].v[k]+(deltaT*atom[i].a[k]);//time;
-           }
+           // Actualiza las Velocidades
+           atom[i].v[k] = vdt_2[k] + atom[i].a[k]*deltaT/2.0;
         }
-        for(i=0;i<Nat;i++)
-        {
-           for(k=0;k<3;k++)
-           {
-              atom[i].x[k]=atom[i].x[k]+(deltaT*atom[i].a[k]);//time;
-           }
-        }
-        time++;
      }
+     //IMPRIME LAS COORDENADAS PARA HACER PELICULA
+     if(!(movie_file=="false"))
+     {
+        print_xyz("temp.xyz");
+        command="cat temp.xyz >> "+movie_file;
+        system(command.c_str());
+        system("rm temp.xyz");
+     }
+     //IMPRIME INFORMACION DEL SISTEMA
+     cout<<"Step : "<<time<<"/"<<nsteps<<endl;
+     if((time+1)>nsteps)
+     {
+        cout<<" Reached maximum number of steps ... Stopping simulation "<<endl;
+     }
+     time++;
+  }
 }
-atom[i].x[k]=atom[i].x[k]+(atom[i].v[k]*deltaT)+(f[k]*pow(deltaT,2)/(2*atom[i].M))
+//atom[i].x[k]=atom[i].x[k]+(atom[i].v[k]*deltaT)+(f[k]*pow(deltaT,2)/(2*atom[i].M))
+//atom[i].v[k]=atom[i].v[k]+(f[k]+f[k+i])*deltaT/(2*atom[i].M)
 
-atom[i].v[k]=atom[i].v[k]+(f[k]+f[k+i])*deltaT/(2*atom[i].M)
+//vdt_2        = atom[i].v[k]+(atom[i].a[k]*deltaT/2.0);
+//atom[i].x[k] = atom[i].x[k] + vdt_2/deltaT;
+//atom[i].a[k] = Fuerza(atom[i].x[k])/atom[i].M;
+//atom[i].v[k] = vdt_2 + atom[i].a[k]*deltaT/2.0;
+
+
 
 
 
@@ -2867,7 +2910,7 @@ void Atomic_Structure::geometry_optimization(string movie_file="false",int max_s
                            // CALCULA LAS FUERZAS
                            if(force_field=="LJ")
                            {
-                              fuerza=Force_LJ(atom[i],atom[j]);
+                              fuerza=Force_LJ(atom[i],atom[j],"go");
                            }
                          //else if(force_field=="ML")
                            //{
