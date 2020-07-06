@@ -2579,7 +2579,7 @@ string string_pipe(string cmd,string defecto="AAA")
       pclose(stream);
    }
    data.pop_back();
-   if(data.length()>0)
+   if(data.length()>1)
    {
       return data;
    }
@@ -2603,7 +2603,7 @@ int int_pipe(string cmd,int defecto=0)
       if (fgets(buffer, max_buffer, stream) != NULL) data.append(buffer);
       pclose(stream);
    }
-   if(data.length()>0)
+   if(data.length()>1)
    {
       return stoi(data);
    }
