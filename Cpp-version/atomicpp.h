@@ -1729,23 +1729,18 @@ void Cluster::rotate_Deg(float thetadeg, float phideg)
 
 void Cluster::kick(float step_width)
 {
-
-   float DelX, DelY, DelZ;
    srand(time(NULL));
+   double Mrandom =  -1.0;
+   double Nrandom =  1.0;
 
    for(i=0;i<Nat;i++)
    {
-      DelX=((double)rand()/((double)RAND_MAX))*step_width;
-      DelY=((double)rand()/((double)RAND_MAX))*step_width;
-      DelZ=((double)rand()/((double)RAND_MAX))*step_width;
-
-      atom[i].x[0]=DelX+atom[i].x[0];
-      atom[i].x[1]=DelY+atom[i].x[1];
-      atom[i].x[2]=DelZ+atom[i].x[2];
+      for(j=0;j<3;j++)
+      {
+         atom[i].x[j]= atom[i].x[j] + ( (Mrandom + (double)rand()/((double)RAND_MAX/(Nrandom-Mrandom+1)+1)) * step_width/2.0 );
+      }
    }
-
 }
-
 
 /************************  Kick_Lennard *****************************/
 /************ cluster_name.kick_lennard(step_width) *****************/
