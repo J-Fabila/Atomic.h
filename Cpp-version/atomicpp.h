@@ -2574,7 +2574,7 @@ string string_pipe(string cmd,string defecto="AAA")
       pclose(stream);
    }
    data.pop_back();
-   if(data.length()>1)
+   if(data.length()>0)
    {
       return data;
    }
