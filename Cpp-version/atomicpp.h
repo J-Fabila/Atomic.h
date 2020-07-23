@@ -1,7 +1,7 @@
 //_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
 //_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
 //_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
-//_/_/_/_/_/_/_/_/_/_/_/_/ atomicpp.h library _/_/_/_/_/_/_/_/_/_/_/_/
+//_/_/_/_/_/_/_/_/_/_/_/_/ atomic.hpp library _/_/_/_/_/_/_/_/_/_/_/_/
 //_/_/_/_/_/_/_ For simulation of atoms and molecules _/_/_/_/_/_/_/_/
 //_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
 //_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <stdio.h>
+#include  <time.h>
 #include  <string>
 #include   <cmath>
 #include   <ctime>
@@ -183,9 +184,9 @@ class Cluster : public Atomic_Structure{
         void kick(float);
         void kick_lennard(float);
         void swap(int);
-        void srand_generator(string, int, string, int, float);
-        void srand_generator_box(string, int, string, int, float);
+        void srand_generator(string, int, string, int,float);
         void rand_generator(string, int, string, int);
+        void roy_generator(string, int, string, int,float);
         void centroid();
         void simulated_annealing(float kick_s, string movie_file,int max_steps, double tolerance, double cutoff_radii, int optimization_algorithm, string force_field);
 };
@@ -1417,163 +1418,14 @@ cout<<i<<"  "<<radio_max<<endl;
 }
 
 
-/************************* srand_generator **************************/
+/************************** roy_generator ***************************/
 /********************** Cluster  Cluster_name; **********************/
-/********* Cluster_name.srand_generator("Au",5,"Ir",3,range) ********/
-/************** Cluster_name.srand_generator("Ir",3) ****************/
-/*********** Cluster_name.srand_generator("Ir",3,range) *************/
+/********** Cluster_name.roy_generator("Au",5,"Ir",3,range) *********/
+/*************** Cluster_name.roy_generator("Ir",3) *****************/
+/************ Cluster_name.roy_generator("Ir",3,range) **************/
 
 
-void Cluster::srand_generator_box(string Symbol_1, int N_Symbol_1, string Symbol_2="AAA", int N_Symbol_2=0, float epsilon=2.5)
-{
-
-   map<string, double> Radios;
-   Radios=radii_dictionary();
-   map<string, double> Masas;
-   Masas=masses_dictionary();
-   map<string, int > Cargas;
-   Cargas=charges_dictionary();
-   Nat=N_Symbol_1+N_Symbol_2;
-   int random;
-   int randomS;
-   double criterio;
-   int accepted=0;
-   int rejected=0;
-   float Mx,Nx,My,Ny,Mz,Nz;
-   float x,y,z;
-   double Distance;
-   srand(time(NULL));
-   atom=new Atom[Nat+1];
-   int cont_S1=1;
-   int cont_S2=0;
-
-   if(strcmp(Symbol_2.c_str(),"AAA") != 0 )
-   {
-      type="bimetallic";
-   }
-   else
-   {
-      type="monometallic";
-   }
-///////////////////////////////Coloca el primer
-///////////////////////////////átomo en el origen
-   atom[0].Symbol=Symbol_1;  //o podría ser que
-   atom[0].x[0]=0;           //se genere en un
-   atom[0].x[1]=0;           //punto aleatorio
-   atom[0].x[2]=0;           //o que admita como
-///////////////////////////////argumento este punto
-///////////////////////////////por default el origen
-
-
-   atom[0].R=assign_radii(Radios, atom[0].Symbol);
-   for(i=1;i<Nat;i++)
-   {
-      accepted=0;
-      while(accepted==0)
-      {
-         random=(i-1)+(double)rand()/((double)RAND_MAX/(0-(i-1)+1)+1);
-
-         if(N_Symbol_2!=0)
-         {
-            randomS=rand()%2;
-
-            if(cont_S1<N_Symbol_1 && randomS==0)
-            {
-               atom[i].Symbol=Symbol_1;
-            }
-            else
-            {
-               if(cont_S2<N_Symbol_2 && randomS==1)
-               {
-                  atom[i].Symbol=Symbol_2;
-               }
-               else
-               {
-                  if(cont_S1>=N_Symbol_1)
-                  {
-                     atom[i].Symbol=Symbol_2;
-                  }
-                  else
-                  {
-                     if(cont_S2>=N_Symbol_2)
-                     {
-                        atom[i].Symbol=Symbol_1;
-                     }
-                  }
-
-               }
-            }
-         }
-         else
-         {
-            atom[i].Symbol=Symbol_1;
-         }
-         atom[i].R=assign_radii(Radios, atom[i].Symbol);
-
-         Mx=atom[random].x[0]+epsilon;  //Maximum range for random X
-         Nx=atom[random].x[0]-epsilon;  //Minimun range for random x
-         My=atom[random].x[1]+epsilon;  //Maximum range for random y
-         Ny=atom[random].x[1]-epsilon;  //Minimum range for random y
-         Mz=atom[random].x[2]+epsilon;  //Maximum range for random z
-         Nz=atom[random].x[2]-epsilon;  //Minimum range for randon z
-
-         atom[i].x[0]=Nx+ ((double)rand())/((double)RAND_MAX )* (Mx-Nx);
-         atom[i].x[1]=Ny+ ((double)rand())/((double)RAND_MAX )* (My-Ny);
-         atom[i].x[2]=Nz+ ((double)rand())/((double)RAND_MAX )* (Mz-Nz);
-
-         rejected=0;
-
-         for(j=0;j<i;j++)
-         {
-            Distance=sqrt(pow(atom[i].x[0]-atom[j].x[0],2)+pow(atom[i].x[1]-atom[j].x[1],2)+pow(atom[i].x[2]-atom[j].x[2],2));
-            criterio=atom[i].R+atom[j].R;
-            if(Distance<criterio)
-            {
-               rejected++;
-            }
-         }
-
-         if(rejected>0)
-         {
-            accepted=0;
-         }
-         else
-         {
-            accepted=1;
-            if(strcmp(atom[i].Symbol.c_str(),Symbol_1.c_str()) == 0 )
-            {
-               cont_S1++;
-            }
-            else
-            {
-               cont_S2++;
-            }
-
-         }
-         if(i<Nat)
-         {
-            continue;
-         }
-         else
-         {
-            break;
-         }
-
-      }
-
-   }
-
-   for(i=0;i<Nat;i++)
-   {
-      atom[i].M=assign_mass(Masas,atom[i].Symbol);
-      atom[i].Z=assign_charge(Cargas,atom[i].Symbol);
-   }
-}
-
-
-/*
-
-void Cluster::srand_generator_alternativo(string Symbol_1, int N_Symbol_1, string Symbol_2="AAA", int N_Symbol_2=0, float epsilon=1.0)
+void Cluster::roy_generator(string Symbol_1, int N_Symbol_1, string Symbol_2="AAA", int N_Symbol_2=0, float epsilon=1.0)
 {
 
   map<string, double> Radios;
@@ -1581,7 +1433,7 @@ void Cluster::srand_generator_alternativo(string Symbol_1, int N_Symbol_1, strin
    Nat=N_Symbol_1+N_Symbol_2;
    int random;
    int randomS;
-   double criterio;
+   double criterio, criterio2;
    int accepted=0;
    int rejected=0;
    float Mx,Nx,My,Ny,Mz,Nz;
@@ -1591,6 +1443,8 @@ void Cluster::srand_generator_alternativo(string Symbol_1, int N_Symbol_1, strin
    atom=new Atom[Nat+1];
    int cont_S1=1;
    int cont_S2=0;
+   double Mrandom =  -1.0;
+   double Nrandom =  1.0;
 
    if(strcmp(Symbol_2.c_str(),"AAA") != 0 )
    {
@@ -1656,8 +1510,8 @@ void Cluster::srand_generator_alternativo(string Symbol_1, int N_Symbol_1, strin
 
          atom[i].R=assign_radii(Radios, atom[i].Symbol);
 
-         double Mrandom =  -1.0;
-         double Nrandom =  1.0;
+         Mrandom =  -1.0;
+         Nrandom =  1.0;
 
          atom[i].x[0]= atom[random].x[0] + ((atom[i].R) * (Mrandom + (double)rand()/((double)RAND_MAX/(Nrandom-Mrandom+1)+1) ));
          atom[i].x[1]= atom[random].x[1] + ((atom[i].R) * (Mrandom + (double)rand()/((double)RAND_MAX/(Nrandom-Mrandom+1)+1) ));
@@ -1670,7 +1524,7 @@ void Cluster::srand_generator_alternativo(string Symbol_1, int N_Symbol_1, strin
             Distance=sqrt(pow(atom[i].x[0]-atom[j].x[0],2)+pow(atom[i].x[1]-atom[j].x[1],2)+pow(atom[i].x[2]-atom[j].x[2],2));
             criterio=atom[i].R+atom[j].R;
 
-            double criterio2 = (2.2 * (1.5928235)*(pow(Nat,1.0/3.0))); // CHECK "as a function of size" e.g ---> (Nat / 2.0)
+            criterio2 = (2.2 * (criterio/2.0)*(pow(Nat,1.0/3.0))); // CHECK "as a function of size" e.g ---> (Nat / 2.0)
             if(Distance<criterio || Distance>criterio2)
             {
              cout<<"Criteria not reached"<<endl;
@@ -1693,7 +1547,6 @@ void Cluster::srand_generator_alternativo(string Symbol_1, int N_Symbol_1, strin
             {
                cont_S2++;
             }
-
          }
          if(i<Nat)
          {
@@ -1703,15 +1556,9 @@ void Cluster::srand_generator_alternativo(string Symbol_1, int N_Symbol_1, strin
          {
             break;
          }
-
       }
-
    }
-
 }
-
-
-*/
 
 
 /************************** print__xyz ******************************/
@@ -1903,6 +1750,7 @@ void Cluster::rotate_Deg(float thetadeg, float phideg)
    }
 
 }
+
 /******************************  Kick *******************************/
 /***************** molecule_name.kick(step_width) *******************/
 /*********************** Cysteine.kick(0.8) *************************/
@@ -1922,6 +1770,7 @@ void Cluster::kick(float step_width)
       }
    }
 }
+
 
 /************************  Kick_Lennard *****************************/
 /************ cluster_name.kick_lennard(step_width) *****************/
@@ -3063,7 +2912,7 @@ void Atomic_Structure::geometry_optimization(string movie_file="false",int max_s
    string command;
    double fuerza, energia=-100000, last_energy;
    double eta=0.01;
-   cout<<" Entering geometry optimization loop ... "<<endl;
+  // cout<<" Entering geometry optimization loop ... "<<endl;
 
    while(current_step<max_steps && abs(dE)>tolerance)
    {
@@ -3131,10 +2980,10 @@ void Atomic_Structure::geometry_optimization(string movie_file="false",int max_s
          system("rm temp.xyz");
       }
       //IMPRIME INFORMACION DEL SISTEMA
-    //  if(current_step>0)
-      //{
+      /*if(current_step>0)
+      {
          cout<<"Step : "<<current_step<<"/"<<max_steps<<"  Current energy : "<<energia<<" dE : "<<dE<<endl;
-    //  }
+      }
       if((current_step+1)>max_steps)
       {
          cout<<" Reached maximum number of steps ... Stopping minimization "<<endl;
@@ -3142,7 +2991,7 @@ void Atomic_Structure::geometry_optimization(string movie_file="false",int max_s
       if(abs(dE)<tolerance)
       {
          cout<<" Reached energy accuracy ... Stopping minimization "<<endl;
-      }
+      }*/
       current_step++;
    } //end while
 } //end function
