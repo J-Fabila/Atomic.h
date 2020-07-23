@@ -1,7 +1,7 @@
 //_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
 //_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
 //_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
-//_/_/_/_/_/_/_/_/_/_/_/_/ atomic.hpp library _/_/_/_/_/_/_/_/_/_/_/_/
+//_/_/_/_/_/_/_/_/_/_/_/_/ atomicpp.h library _/_/_/_/_/_/_/_/_/_/_/_/
 //_/_/_/_/_/_/_ For simulation of atoms and molecules _/_/_/_/_/_/_/_/
 //_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
 //_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
@@ -2839,13 +2839,13 @@ double double_pipe(string cmd,float defecto=0.0)
 
 
 
-/********************************************************************/
 /************************** coulomb_matrix **************************/
+/********************************************************************/
 /**************** Molecule  molecule_1, molecule_2; *****************/
 /*************** c_matrix=coulomb_matrix(molecule_1); ***************/
 /********************************************************************/
 
-void coulomb_matrix(Atomic_Structure Molecule1, string energy, string file)
+void coulomb_matrix(Atomic_Structure Molecule1, string energy, string file,bool diagonal)
 {
    double  coulomb[Molecule1.Nat][Molecule1.Nat];
    // Calculates Coulomb Matrix
@@ -2864,18 +2864,57 @@ void coulomb_matrix(Atomic_Structure Molecule1, string energy, string file)
       }
    }
    // Flat Coulomb Matrix into a single vector
+
    ofstream dat(file,std::ios_base::app);
    for(i=0;i<Molecule1.Nat;i++)
    {
       for(j=i;j<Molecule1.Nat;j++)
       {
-           dat<<coulomb[i][j]<<",";
+           if(diagonal && (i==j))
+           {
+              dat<<coulomb[i][j]<<",";
+           }
+           else if(j!=i)
+           {
+              dat<<coulomb[i][j]<<",";
+           }
       }
    }
    dat<<energy<<endl;
    dat.close();
 
 }
+
+/********************************************************************/
+/************************** coulomb_matrix **************************/
+/**************** Molecule  molecule_1, molecule_2; *****************/
+/*************** c_matrix=coulomb_matrix(molecule_1); ***************/
+/********************************************************************/
+
+void header_csv(Atomic_Structure Molecule1, string file,bool diagonal)
+{
+   int conter=0;
+   ofstream dat(file,std::ios_base::app);
+   for(i=0;i<Molecule1.Nat;i++)
+   {
+      for(j=i;j<Molecule1.Nat;j++)
+      {
+           if(diagonal && (i==j))
+           {
+              dat<<conter<<",";
+           }
+           else if(j!=i)
+           {
+              dat<<conter<<",";
+           }
+           conter++;
+      }
+   }
+   dat<<"Eat"<<endl;
+   dat.close();
+
+}
+
 void output_qe_to_movie(string file, string file_movie)
 {
    string comm=" cp  ";
