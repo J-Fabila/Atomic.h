@@ -1304,7 +1304,6 @@ void Cluster::srand_generator(string Symbol_1, int N_Symbol_1, string Symbol_2="
    atom[0].R=assign_radii(Radios, atom[0].Symbol);
    for(i=1;i<Nat;i++)
    {
-cout<<i<<"  "<<radio_max<<endl;
       accepted=0;
       while(accepted==0)
       {
