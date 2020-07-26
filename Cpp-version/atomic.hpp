@@ -2972,20 +2972,25 @@ double Force_LJ(Atom a1, Atom a2,string calculation)
    return f;
 }
 
+
 void Atomic_Structure::molecular_dynamic(Simulation_Cell box,  int nsteps=1000, string movie_file="false", float temperature=300, double cutoff_radii=10,  string force_field="LJ")
 {
 //http://phys.ubbcluj.ro/~tbeu/MD/C2_for.pdf
 //According with:  Rapaport, D.C., \textit{The Art of Molecular Dynamics Simulation}, Cambridge University Press, Cambridge, 1995.
   int time=0;
-  float deltaT=0.1;
+  float deltaT=0.0001;
   float Dist;
   float sep;
-  double swap, distancia, dx, dy, dz, vdt_2[3];
+  double swap, distancia, dx, dy, dz;
   double fuerza;
   double xrange=box.M[0][0];
   double yrange=box.M[1][1];
   double zrange=box.M[2][2];
+  double F[Nat][Nat];
+  double a_aux[Nat][3];
   string command;
+  // Para t=0 podemos generar un for que calcule las velocidades iniciales
+  // if(Init_velocities==true){} else{ velocidades en 0}
   while(time < nsteps)
   {
      for(i=0;i<Nat;i++)
@@ -2993,23 +2998,19 @@ void Atomic_Structure::molecular_dynamic(Simulation_Cell box,  int nsteps=1000, 
         for(k=0;k<3;k++)
         {
            // Actualiza las posiciones
-           vdt_2[k]        = atom[i].v[k]+(atom[i].a[k]*deltaT/2.0);
-           atom[i].x[k] = atom[i].x[k] + vdt_2[k]/deltaT;
-//cout<<vdt_2[k]<<" ";
+           atom[i].x[k] = atom[i].x[k] + atom[i].v[k]*deltaT + atom[i].a[k]*deltaT/2.0;
         }
-//cout<<endl;
      }
      for(i=0;i<Nat;i++)
      {
         //CALCULA LAS FUERZAS
-        atom[i].a[0]=0.0; atom[i].a[1]=0.0; atom[i].a[2]=0.0;
-        for(j=0;j<Nat;j++)
+        for(j=i+1;j<Nat;j++) // Acá se puede hacer j=1 ; pues F[i][j]=-F[j][i]
         {
            if(box.periodicity==false)
            {
               distancia=Atomic_Distance(atom[i],atom[j]);
            }
-           else // Periodic Bound Conditions
+           else // Periodic Boundary Conditions
            {
               dx=atom[i].x[0]-atom[j].x[0];
               dy=atom[i].x[1]-atom[j].x[1];
@@ -3033,33 +3034,69 @@ void Atomic_Structure::molecular_dynamic(Simulation_Cell box,  int nsteps=1000, 
            }
            if(distancia<cutoff_radii)
            {
-              if(!(i==j))
+              if(force_field=="LJ")
               {
-                 if(force_field=="LJ")
-                 {
-                    fuerza=Force_LJ(atom[i],atom[j],"md");
-                                  cout<<fuerza<<" i "<<i<<" j "<<j<<endl;
-                 }
-                 else if(force_field=="ML")
-                 {
-                    cout<<"ML Force Field Not implemented yet ... coming soon!"<<endl;
-                    //fuerza=Force_ML(atom[i],atom[j]);
-                 }
+                 F[i][j]=Force_LJ(atom[i],atom[j],"md");
+                 F[j][i]=-F[i][j];
+              }
+              else if(force_field=="ML")
+              {
+                 // IDEM
+                 cout<<"ML Force Field Not implemented yet ... coming soon!"<<endl;
+                 //F[i][j]=Force_ML(atom[i],atom[j]);
+                 //F[j][i]=-F[i][j];
+              }
+           }
+           else // Quiere decir que quedan fuera del cutoff_radii
+           {
+              F[i][j]=0;
+              F[j][i]=0;
+           }
+        }
+     }
+     // Esto calcula las aceleraciones del siguiente paso
+     for(i=0;i<Nat;i++)
+     {
+        a_aux[i][0]=0.0; a_aux[i][1]=0.0; a_aux[i][2]=0.0;
+        for(j=0;j<Nat;j++)
+        {
+           if(!(i==j))
+           {
+              if(force_field=="LJ")
+              {
                  for(k=0;k<3;k++)
                  {
-                 /////////////////////////////////////////////////
-                    atom[i].a[k]=atom[i].a[k]+((fuerza/atom[i].M)*(atom[i].x[k]-atom[j].x[k]));
-                 /////////////////////////////////////////////////
+                    /////////////////////////////////////////////////
+                    a_aux[i][k]=a_aux[i][k]+((F[i][j]/atom[i].M)*(atom[i].x[k]-atom[j].x[k]));
+                    /////////////////////////////////////////////////
                  }
+              }
+              else if(force_field=="ML")
+              {
+                   // IDEM
+                   cout<<"ML Force Field Not implemented yet ... coming soon!"<<endl;
+                   //DEBE DEVOLVER a_aux[i][k]; i.e. las aceleraciones
               }
            }
         }
+     }
+     // Calcula las nuevas velocidades
+     for(i=0;i<Nat;i++)
+     {
         for(k=0;k<3;k++)
         {
-           // Actualiza las Velocidades
-           atom[i].v[k] = vdt_2[k] + atom[i].a[k]*deltaT/2.0;
+           atom[i].v[k] = atom[i].v[k] + (a_aux[i][k]+atom[i].a[k])*deltaT/2.0;
         }
      }
+     // Intercambiamos las aceleraciones anteriores por las nuevas
+     for(i=0;i<Nat;i++)
+     {
+        for(k=0;k<3;k++)
+        {
+           atom[i].a[k] = a_aux[i][k];
+        }
+     }
+
      //IMPRIME LAS COORDENADAS PARA HACER PELICULA
      if(!(movie_file=="false"))
      {
@@ -3077,18 +3114,6 @@ void Atomic_Structure::molecular_dynamic(Simulation_Cell box,  int nsteps=1000, 
      time++;
   }
 }
-//atom[i].x[k]=atom[i].x[k]+(atom[i].v[k]*deltaT)+(f[k]*pow(deltaT,2)/(2*atom[i].M))
-//atom[i].v[k]=atom[i].v[k]+(f[k]+f[k+i])*deltaT/(2*atom[i].M)
-
-//vdt_2        = atom[i].v[k]+(atom[i].a[k]*deltaT/2.0);
-//atom[i].x[k] = atom[i].x[k] + vdt_2/deltaT;
-//atom[i].a[k] = Fuerza(atom[i].x[k])/atom[i].M;
-//atom[i].v[k] = vdt_2 + atom[i].a[k]*deltaT/2.0;
-
-
-
-
-
 
 
 
