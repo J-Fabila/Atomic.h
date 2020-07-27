@@ -135,6 +135,7 @@ class Simulation_Cell{
        void print_screen();
 };
 
+Simulation_Cell default_box;
 
 /********************************************************************/
 /******************* Atomic_Structure Definition ********************/
@@ -162,7 +163,7 @@ class Atomic_Structure{
         bool fit_in(Simulation_Cell);
         void show(string visualizer);
         void molecular_dynamic(Simulation_Cell box,  int nsteps, string movie_file, float temperature, double cutoff_radii,  string force_field);
-        void geometry_optimization(string movie_file,int max_steps, double tolerance, double cutoff_radii, int optimization_algorithm, string force_field);
+        void geometry_optimization(string movie_file,int max_steps, Simulation_Cell box, double tolerance, double cutoff_radii, int optimization_algorithm, string force_field);
         void initialize_electronic_density(int initialization, int charge);
 };
 
@@ -2966,19 +2967,19 @@ double Force_LJ(Atom a1, Atom a2,string calculation)
    }
    else if(calculation=="md")
    {
-      epsilon=3; // eV
+      epsilon=30; // eV
    }
    f=48*(epsilon/pow(Dist,2))*((pow( (sigma/Dist) , 12 ) - pow( (sigma/Dist) , 6 )/2 ));
    return f;
 }
 
 
-void Atomic_Structure::molecular_dynamic(Simulation_Cell box,  int nsteps=1000, string movie_file="false", float temperature=300, double cutoff_radii=10,  string force_field="LJ")
+void Atomic_Structure::molecular_dynamic(Simulation_Cell box=default_box,  int nsteps=1000, string movie_file="false", float temperature=300, double cutoff_radii=10,  string force_field="LJ")
 {
 //http://phys.ubbcluj.ro/~tbeu/MD/C2_for.pdf
 //According with:  Rapaport, D.C., \textit{The Art of Molecular Dynamics Simulation}, Cambridge University Press, Cambridge, 1995.
   int time=0;
-  float deltaT=0.0001;
+  float deltaT=0.01;
   float Dist;
   float sep;
   double swap, distancia, dx, dy, dz;
@@ -3037,7 +3038,7 @@ void Atomic_Structure::molecular_dynamic(Simulation_Cell box,  int nsteps=1000, 
               if(force_field=="LJ")
               {
                  F[i][j]=Force_LJ(atom[i],atom[j],"md");
-                 F[j][i]=-F[i][j];
+                 F[j][i]=F[i][j];
               }
               else if(force_field=="ML")
               {
@@ -3116,9 +3117,9 @@ void Atomic_Structure::molecular_dynamic(Simulation_Cell box,  int nsteps=1000, 
 }
 
 
+/*
 
-
-void Atomic_Structure::geometry_optimization(string movie_file="false",int max_steps=1000, double tolerance=0.001, double cutoff_radii=10, int optimization_algorithm=0, string force_field="LJ")
+void Atomic_Structure::geometry_optimization(string movie_file="false",int max_steps=1000, Simulation_Cell box=default_box, double tolerance=0.001, double cutoff_radii=10, int optimization_algorithm=0, string force_field="LJ")
 { // optimization_algorithm = 0 : gradient_descent ; 1 : conjugate_gradient ; 2 : quasi_newton
   // gradient_descent is recomended only for Lennard-Jones Potential, conjugate_gradient and quasi_newton might be more suitable for other potentials
    int current_step=0;
@@ -3209,66 +3210,108 @@ void Atomic_Structure::geometry_optimization(string movie_file="false",int max_s
       current_step++;
    } //end while
 } //end function
+*/
 
-/*
-void Atomic_Structure::geometry_optimization(string movie_file="false",int max_steps=1000, double tolerance=0.001, double cutoff_radii=10, int optimization_algorithm=0, string force_field="LJ")
+void Atomic_Structure::geometry_optimization(string movie_file="false",int max_steps=1000, Simulation_Cell box=default_box, double tolerance=0.001, double cutoff_radii=10, int optimization_algorithm=0, string force_field="LJ")
 { // optimization_algorithm = 0 : gradient_descent ; 1 : conjugate_gradient ; 2 : quasi_newton
    int current_step=0;
    double dE=100.0; // Diferencia energética ; valor inicial irrelevante;
+   double F[Nat][Nat], fuerza, energia=-100000, last_energy;
+   double eta=0.001;
+   float Dist;
+   float sep;
+   double swap, distancia, dx, dy, dz;
+   double xrange=box.M[0][0];
+   double yrange=box.M[1][1];
+   double zrange=box.M[2][2];
+   double a_aux[Nat][3];
    string command;
-   double f[Nat][Nat][3], fuerza, energia=-100000, last_energy;
-   double eta=0.01;
-
    cout<<" Entering geometry optimization loop ... "<<endl;
-
    while(current_step<max_steps && abs(dE)>tolerance)
    {
       last_energy=energia;
       switch (optimization_algorithm)
       {
          case 0: ///// / / / /  /  /  /   /    /    /   /  / / / / / ///////  "gradient_descent"
-            // CALCULA LAS FUERZAS individuales
-            for(i=0;i<Nat;i++)
+         for(i=0;i<Nat;i++)
+         {
+         //CALCULA LAS FUERZAS
+            for(j=i+1;j<Nat;j++) // Acá se puede hacer j=1 ; pues F[i][j]=-F[j][i]
             {
-               for(j>i;j<Nat;j++)
+               if(box.periodicity==false)
                {
-                  //if(Atomic_Distance(atom[i],atom[j])<cutoff_radii)
-                  //{
-                     for(k=0;k<3;k++)
-                     {
-                        if(force_field=="LJ")
-                        {
-                           fuerza=Force_LJ(atom[i],atom[j]);
-                        }
-                      //else if(force_field=="ML")
-                      //  {
-                      //     fuerza=Force_ML(atom[i],atom[j]);
-                      //  }
-                        f[i][j][k]=fuerza*(atom[i].x[k]-atom[j].x[k]);
-                        f[j][i][k]=-f[i][j][k] ;
-                     }
-                  //}
+                  distancia=Atomic_Distance(atom[i],atom[j]);
+               }
+               else // Periodic Boundary Conditions
+               {
+                  dx=atom[i].x[0]-atom[j].x[0];
+                  dy=atom[i].x[1]-atom[j].x[1];
+                  dz=atom[i].x[2]-atom[j].x[2];
+                  if (abs(dx) > 0.5*xrange)
+                  {
+                     if(dx>0){ dx = xrange + atom[j].x[0]-atom[i].x[0]; }
+                     else { dx = xrange + atom[i].x[0]-atom[j].x[0]; }
+                  }
+                  if (abs(dy) > 0.5*yrange)
+                  {
+                     if(dy>0){ dy = yrange + atom[j].x[1]-atom[i].x[1]; }
+                     else { dy = yrange + atom[i].x[1]-atom[j].x[1]; }
+                  }
+                  if (abs(dz) > 0.5*xrange)
+                  {
+                     if(dz>0){ dz = zrange + atom[j].x[2]-atom[i].x[2]; }
+                     else { dz = zrange + atom[i].x[2]-atom[j].x[2]; }
+                  }
+                  distancia=sqrt( pow(dx,2) + pow(dy,2) + pow(dz,2) ) ;
+               }
+               if(distancia<cutoff_radii)
+               {
+                  if(force_field=="LJ")
+                  {
+                     F[i][j]=Force_LJ(atom[i],atom[j],"go");
+                     F[j][i]=F[i][j];
+                  }
+                  else if(force_field=="ML")
+                  {
+                     // IDEM
+                     cout<<"ML Force Field Not implemented yet ... coming soon!"<<endl;
+                     //F[i][j]=Force_ML(atom[i],atom[j]);
+                     //F[j][i]=-F[i][j];
+                  }
+               }
+               else // Quiere decir que quedan fuera del cutoff_radii
+               {
+                  F[i][j]=0;
+                  F[j][i]=0;
                }
             }
-            //Calcula fuerzas totales
-            energia=0;
-            for(i=0;i<Nat;i++)
-            {
+          }
+          // Esto calcula las aceleraciones del siguiente paso
+          energia=0;
+          for(i=0;i<Nat;i++)
+          {
                atom[i].a[0]=0.0; atom[i].a[1]=0.0; atom[i].a[2]=0.0;
                for(j=0;j<Nat;j++)
                {
-  //                if(Atomic_Distance(atom[i],atom[j])<cutoff_radii)
-    //              {
-                     if(i!=j)
+                  if(!(i==j))
+                  {
+                     if(force_field=="LJ")
                      {
                         for(k=0;k<3;k++)
                         {
-                           atom[i].a[k]=atom[i].a[k]+f[i][j][k];
+                           /////////////////////////////////////////////////
+                           atom[i].a[k]=atom[i].a[k]+((F[i][j])*(atom[i].x[k]-atom[j].x[k]));
+                           /////////////////////////////////////////////////
                         }
-                        //////////////// Esta línea se puede eliminar y dejar que el umbral sea de fuerzas y no energías
                         energia=Energy_LJ(atom[i],atom[j])+energia;
                      }
-                  //}
+                     else if(force_field=="ML")
+                     {
+                        // IDEM
+                        cout<<"ML Force Field Not implemented yet ... coming soon!"<<endl;
+                        //DEBE DEVOLVER a_aux[i][k]; i.e. las aceleraciones
+                     }
+                  }
                }
             }
             //CALCULA Diferencias energéticas
@@ -3318,7 +3361,7 @@ void Atomic_Structure::geometry_optimization(string movie_file="false",int max_s
       current_step++;
    } //end while
 } //end function
-*/
+
 
 void Atomic_Structure::initialize_electronic_density(int initialization=0, int charge=0)
 {
