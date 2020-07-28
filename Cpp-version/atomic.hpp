@@ -3000,6 +3000,13 @@ void Atomic_Structure::molecular_dynamic(Simulation_Cell box=default_box,  int n
         {
            // Actualiza las posiciones
            atom[i].x[k] = atom[i].x[k] + atom[i].v[k]*deltaT + atom[i].a[k]*deltaT/2.0;
+           if(box.periodicity==true) // AUN FALLAN LAS CONDICIONES PERIODICAS; NECESARIO IMPLEMENTAR COMO EN PACMAN
+           {
+               if(abs(atom[i].x[k])>box.M[k][k])
+               {
+                  atom[i].x[k]=atom[i].x[k]-box.M[k][k];
+               }
+           }
         }
      }
      for(i=0;i<Nat;i++)
