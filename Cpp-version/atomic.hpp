@@ -2967,7 +2967,7 @@ double Force_LJ(Atom a1, Atom a2,string calculation)
    }
    else if(calculation=="md")
    {
-      epsilon=30; // eV
+      epsilon=(a1.M+a2.M)/2; // eV
    }
    f=48*(epsilon/pow(Dist,2))*((pow( (sigma/Dist) , 12 ) - pow( (sigma/Dist) , 6 )/2 ));
    return f;
