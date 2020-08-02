@@ -3088,6 +3088,9 @@ void Atomic_Structure::molecular_dynamic(Simulation_Cell box=default_box,  int n
            }
         }
         // En esta parte se podría poner aux[i][k]=aux[i][k]+fuerza_externa[k]
+        // if(Fuerza_Externa!=False):
+        //      Aux[i,:]=Aux[i,:]+(Fuerza_Externa(e_a.atomo[i]))/e_a.atomo[i].M
+
      }
      // Calcula las nuevas velocidades
      for(i=0;i<Nat;i++)
